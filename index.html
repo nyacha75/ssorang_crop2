@@ -317,15 +317,30 @@
                         <div><label style="font-size: 13px; margin-bottom:5px;">글자 색상</label><input type="color" id="colTextColor" value="#2563eb" style="width: 60px;"></div>
                         <div><label style="font-size: 13px; margin-bottom:5px;">여백(px)</label><input type="number" id="colMargin" value="15" style="width: 60px;"></div>
                     </div>
+                    <div style="display:flex; gap:15px; flex-wrap: wrap; margin-bottom: 12px;">
+                        <div style="flex:1;">
+                            <label style="font-size:13px; margin-bottom: 4px;">시나리오명</label>
+                            <div class="input-group">
+                                <input type="text" id="colScenarioName" placeholder="시나리오명 입력" style="flex:1; width:100%;">
+                                <input type="number" id="colScenarioSize" value="60" title="글자 크기">
+                            </div>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:13px; margin-bottom: 4px;">캐릭터 이름</label>
+                            <div class="input-group">
+                                <input type="text" id="colCharName" placeholder="이름 입력" style="flex:1; width:100%;">
+                                <input type="number" id="colCharSize" value="100" title="글자 크기">
+                            </div>
+                        </div>
+                    </div>
                     <label style="font-size: 13px; margin-bottom:5px;">좌측에 삽입할 스탠딩(선택)</label>
                     <input type="file" id="colSideImg" accept="image/*">
                 </div>
                 <div>
-                    <label style="font-size: 13px; margin-bottom:5px;">사용자 폰트 업로드 (선택, .ttf/.otf/.woff/.woff2)</label>
+                    <label style="font-size: 13px; margin-bottom:5px;">사용자 폰트 업로드</label>
                     <input type="file" id="colFontFile" accept=".ttf,.otf,.woff,.woff2">
-                    <div id="colFontStatus" style="font-size:12px; color:#64748b; margin-top:6px;">기본 폰트(Pretendard) 사용 중</div>
+                    <div id="colFontStatus" style="font-size:12px; color:#64748b; margin-top:6px;"></div>
                 </div>
-                <button id="btnGeneratePreview" class="action-btn" disabled>미리보기 생성</button>
             </div>
         </div>
         
@@ -339,24 +354,6 @@
             
             <h3 style="margin: 0 0 10px 0; color: var(--primary); font-size: 16px;">2. 최종 이미지 미리보기 및 설정</h3>
             <p style="font-size:13px; color:#64748b; margin: 0 0 12px;">전신 이미지는 미리보기 위에서 <strong>마우스 휠로 배율</strong>을 조절하세요. 아래 설정은 값을 바꾸면 자동으로 반영됩니다.</p>
-            <div style="background: #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                <div style="display:flex; gap:15px; flex-wrap: wrap; margin-bottom: 10px;">
-                    <div style="flex:1;">
-                        <label style="font-size:13px; margin-bottom: 4px;">시나리오명</label>
-                        <div class="input-group">
-                            <input type="text" id="colScenarioName" placeholder="시나리오명 입력" style="flex:1; width:100%;">
-                            <input type="number" id="colScenarioSize" value="60" title="글자 크기">
-                        </div>
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-size:13px; margin-bottom: 4px;">캐릭터 이름</label>
-                        <div class="input-group">
-                            <input type="text" id="colCharName" placeholder="이름 입력" style="flex:1; width:100%;">
-                            <input type="number" id="colCharSize" value="100" title="글자 크기">
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div id="canvasWheelHint" style="text-align:center; font-size:12px; color:#94a3b8; margin-bottom:6px;">
                 💡 전신 이미지: 마우스 휠로 배율 조절 / 드래그로 위치 이동
@@ -598,7 +595,7 @@
 
                     if (type === 'hs') { c_hs = inst; updatePreviewBg('hs'); }
                     if (type === 'pt') c_pt = inst;
-                    if (type === 'col') c_col = inst;
+                    if (type === 'col') { c_col = inst; if (f_pt.length) scheduleCollageAutoGenerate(150); }
                     if (type === 'ci') { c_ci = inst; updatePreviewBg('ci'); }
                     
                     const btn = document.getElementById(btnId);
@@ -606,6 +603,10 @@
                 }
             });
         };
+        if (type === 'col') {
+            img.addEventListener('cropend', () => scheduleCollageAutoGenerate());
+            img.addEventListener('zoom', () => scheduleCollageAutoGenerate(600));
+        }
         img.src = URL.createObjectURL(file);
     };
 
@@ -688,7 +689,11 @@
             if(c_pt) { c_pt.destroy(); c_pt = null; document.getElementById('imgPortrait').src = ''; }
             if(c_col) { c_col.destroy(); c_col = null; document.getElementById('imgCollage').src = ''; }
             const btn1 = document.getElementById('btnCropPortrait'); if(btn1) btn1.disabled = true;
-            const btn2 = document.getElementById('btnGeneratePreview'); if(btn2) btn2.disabled = true;
+            document.getElementById('collageGrid').innerHTML = '';
+            document.getElementById('collagePreviewArea').style.display = 'none';
+            const cvs = document.getElementById('finalCollageCanvas');
+            if(cvs) cvs.style.display = 'none';
+            globalSideScale = 1.0; sideOffsetX = 0; sideOffsetY = 0;
             return;
         }
 
@@ -714,6 +719,8 @@
                 renderPortraitFileList();
                 if (index === 0 && f_pt.length > 0) {
                     loadCropper('pt'); loadCropper('col');
+                } else if (f_pt.length > 0) {
+                    scheduleCollageAutoGenerate();
                 }
             };
 
@@ -736,6 +743,8 @@
             document.getElementById('portraitRotateSlider').value = 0; document.getElementById('ptRotateValue').innerText = "0°";
             document.getElementById('colRotateSlider').value = 0; document.getElementById('colRotateValue').innerText = "0°";
             loadCropper('pt'); loadCropper('col');
+        } else {
+            scheduleCollageAutoGenerate();
         }
     });
 
@@ -778,6 +787,7 @@
         const sld = document.getElementById(sldId);
         let v = parseInt(sld.value) + deg; if(v > 180) v -= 360; if(v < -180) v += 360;
         sld.value = v; document.getElementById(valId).innerText = `${v}°`; c.rotateTo(v);
+        if (type === 'col') scheduleCollageAutoGenerate();
     };
     window.resetManual = (type) => {
         let c = type === 'pt' ? c_pt : c_col; if(!c) return;
@@ -785,6 +795,7 @@
         const valId = type === 'pt' ? 'ptRotateValue' : 'colRotateValue';
         document.getElementById(sldId).value = 0; document.getElementById(valId).innerText = "0°";
         c.reset();
+        if (type === 'col') scheduleCollageAutoGenerate();
     };
     document.getElementById('portraitRotateSlider').addEventListener('input', e => {
         document.getElementById('ptRotateValue').innerText = `${e.target.value}°`;
@@ -793,6 +804,7 @@
     document.getElementById('colRotateSlider').addEventListener('input', e => {
         document.getElementById('colRotateValue').innerText = `${e.target.value}°`;
         if(c_col) c_col.rotateTo(parseInt(e.target.value));
+        scheduleCollageAutoGenerate();
     });
 
     // ==========================================
@@ -992,7 +1004,7 @@
     document.getElementById('btnCollageBackup').addEventListener('click', async () => {
         const items = document.querySelectorAll('.collage-item');
         if (items.length === 0) {
-            alert('저장할 콜라주 조각이 없습니다. 먼저 [미리보기 생성]을 진행해주세요.');
+            alert('저장할 콜라주 조각이 없습니다. 먼저 반신 스탠딩 파일을 추가해주세요.');
             return;
         }
         document.getElementById('backupNameModal').classList.add('open');
@@ -1136,7 +1148,7 @@
                     } catch(fontErr) { console.warn('폰트 복원 실패:', fontErr); }
                 } else {
                     customFontName = null; customFontDataUrl = null;
-                    document.getElementById('colFontStatus').innerText = '기본 폰트(Pretendard) 사용 중';
+                    document.getElementById('colFontStatus').innerText = '';
                     document.getElementById('colFontFile').value = '';
                 }
 
@@ -1391,7 +1403,7 @@
 
         const btnBlind = document.createElement('button');
         btnBlind.className = 'blind-toggle' + (blinded ? ' on' : '');
-        btnBlind.innerText = '🙈';
+        btnBlind.innerText = '👁️';
         btnBlind.title = '실루엣(검은색) 블라인드 켜기/끄기';
         btnBlind.onclick = () => {
             const nowBlinded = item.dataset.blinded !== 'true';
@@ -1430,10 +1442,20 @@
         scheduleAutoPreview();
     });
 
-    document.getElementById('btnGeneratePreview').addEventListener('click', async function() {
+    // 콜라주 조각을 자동으로 재생성하는 엔진 (버튼 없이 크롭 위치/배율/회전/파일 변경 시 자동 반영)
+    let isGeneratingCollage = false;
+    let colAutoGenTimer = null;
+
+    function scheduleCollageAutoGenerate(delay = 400) {
+        clearTimeout(colAutoGenTimer);
+        colAutoGenTimer = setTimeout(() => { generateCollagePreview(); }, delay);
+    }
+
+    async function generateCollagePreview() {
         if (!c_col || f_pt.length === 0) return;
-        const btn = this; btn.disabled = true; btn.innerText = '생성 중...';
-        
+        if (isGeneratingCollage) { scheduleCollageAutoGenerate(150); return; }
+        isGeneratingCollage = true;
+
         try {
             const w = parseInt(document.getElementById('colW').value) || 460;
             const h = document.getElementById('colSquareToggle').checked ? w : (parseInt(document.getElementById('colH').value) || 460);
@@ -1444,16 +1466,34 @@
             const canvasData = c_col.getCanvasData();
             
             const gridArea = document.getElementById('collageGrid');
-            gridArea.innerHTML = ''; 
-            document.getElementById('collagePreviewArea').style.display = 'block';
-            globalSideScale = 1.0; 
-            sideOffsetX = 0;
-            sideOffsetY = 0;
+            const previewArea = document.getElementById('collagePreviewArea');
+
+            // 기존 조각들의 이름/블라인드/이름표시 상태와 순서를 보존
+            const prevItems = Array.from(gridArea.children);
+            const prevStateById = {};
+            prevItems.forEach(it => {
+                prevStateById[it.dataset.id] = {
+                    name: it.querySelector('input').value,
+                    blinded: it.dataset.blinded === 'true',
+                    nameOff: it.dataset.nameOff === 'true'
+                };
+            });
+            const prevOrder = prevItems.map(it => it.dataset.id);
+            const isFirstGeneration = previewArea.style.display === 'none' || prevItems.length === 0;
+
+            gridArea.innerHTML = '';
+            previewArea.style.display = 'block';
+            if (isFirstGeneration) {
+                globalSideScale = 1.0;
+                sideOffsetX = 0;
+                sideOffsetY = 0;
+            }
 
             const stage = document.createElement('div');
             stage.style.cssText = `position:fixed; top:0; left:0; width:${cW}px; height:${cH}px; opacity:0.001; pointer-events:none; z-index:-9999;`;
             document.body.appendChild(stage);
 
+            const generated = [];
             for (let [idx, file] of f_pt.entries()) {
                 await new Promise((resolve) => {
                     const img = new Image();
@@ -1475,7 +1515,14 @@
                                 
                                 if(canvas) {
                                     const b64 = canvas.toDataURL();
-                                    createCollageItem(b64, getShortName(file.name), idx, false, false);
+                                    const prev = prevStateById[String(idx)];
+                                    generated.push({
+                                        idx,
+                                        src: b64,
+                                        name: prev ? prev.name : getShortName(file.name),
+                                        blinded: prev ? prev.blinded : false,
+                                        nameOff: prev ? prev.nameOff : false
+                                    });
                                 }
                                 this.cropper.destroy(); 
                                 stage.innerHTML = ''; 
@@ -1489,10 +1536,26 @@
                 });
             }
             stage.remove();
+
+            // 기존 순서를 최대한 유지하고, 새로 추가된 파일은 뒤에 붙인다
+            let ordered;
+            if (prevOrder.length) {
+                const byId = {}; generated.forEach(g => byId[String(g.idx)] = g);
+                ordered = prevOrder.filter(id => byId[id]).map(id => byId[id]);
+                generated.forEach(g => { if (!prevOrder.includes(String(g.idx))) ordered.push(g); });
+            } else {
+                ordered = generated;
+            }
+
+            ordered.forEach(g => createCollageItem(g.src, g.name, g.idx, g.blinded, g.nameOff));
+
             await drawFinalCollage(false);
-        } catch (e) { console.error(e); }
-        finally { btn.disabled = false; btn.innerText = '미리보기 생성'; }
-    });
+        } catch (e) {
+            console.error(e);
+        } finally {
+            isGeneratingCollage = false;
+        }
+    }
 
     // 설정값 변경 시 자동으로 최종 미리보기에 반영
     ['colCols', 'colTextColor', 'colMargin', 'colScenarioName', 'colScenarioSize', 'colCharName', 'colCharSize'].forEach(id => {
@@ -1678,7 +1741,7 @@
     document.getElementById('btnExportCcfolia').addEventListener('click', async () => {
         const items = document.querySelectorAll('.collage-item');
         if (items.length === 0) {
-            alert('내보낼 포트레이트가 없습니다. 먼저 [미리보기 생성]을 진행해주세요.');
+            alert('내보낼 포트레이트가 없습니다. 먼저 반신 스탠딩 파일을 추가해주세요.');
             return;
         }
 
