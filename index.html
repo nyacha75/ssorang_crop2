@@ -75,6 +75,8 @@
             border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s;
         }
         .sub-btn:hover { background-color: #cbd5e1; }
+        .sub-btn.danger { background-color: #fee2e2; color: #b91c1c; }
+        .sub-btn.danger:hover { background-color: #fecaca; }
         input[type="range"] { flex: 1; cursor: pointer; }
         .file-count { font-size: 14px; font-weight: bold; color: var(--primary); margin-top: 8px; }
 
@@ -106,12 +108,14 @@
             display: flex; flex-direction: column; align-items: center; gap: 8px; 
             cursor: grab; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s;
         }
+        .collage-item.blinded { background: #f1f5f9; }
         .collage-item:active { cursor: grabbing; }
         .collage-item img { max-width: 100%; border-radius: 4px; border: 1px solid #eee; pointer-events: none; }
         .collage-item input { width: 90%; text-align: center; font-size: 13px; font-weight: bold; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; color: var(--primary); }
         .item-controls { display: flex; gap: 5px; width: 100%; }
         .item-controls button { flex: 1; padding: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; font-weight: bold; color: var(--primary); }
         .item-controls button:hover { background: #e2e8f0; }
+        .item-controls button.blind-toggle.on { background: #1e293b; color: #fff; }
 
         /* ===== Cropper.js 클린 모드 ===== */
         .cropper-view-box { outline: none !important; box-shadow: none !important; border: none !important; transition: background-color 0.2s; }
@@ -223,6 +227,7 @@
             <input type="file" id="filePortrait" accept="image/*" multiple style="margin-top: 10px; border: none; background: #f8fafc; padding: 10px; width: 100%; cursor: pointer;">
             <div id="portraitFileCount" class="file-count" style="margin-top: 15px;">선택된 파일: 0개</div>
             <div id="portraitFileList" class="file-list-container" style="display: none;"></div>
+            <button id="btnClearPortraitFiles" class="sub-btn danger" style="margin-top: 10px; display: none;">🗑️ 첨부 파일 전체 초기화</button>
         </div>
 
         <h3 style="color: var(--primary); margin-bottom: 10px;">2-1. 코코포리아 스탠딩</h3>
@@ -315,17 +320,25 @@
                     <label style="font-size: 13px; margin-bottom:5px;">좌측에 삽입할 스탠딩(선택)</label>
                     <input type="file" id="colSideImg" accept="image/*">
                 </div>
-                <button id="btnGeneratePreview" class="action-btn" disabled>미리보기 갱신</button>
+                <div>
+                    <label style="font-size: 13px; margin-bottom:5px;">사용자 폰트 업로드 (선택, .ttf/.otf/.woff/.woff2)</label>
+                    <input type="file" id="colFontFile" accept=".ttf,.otf,.woff,.woff2">
+                    <div id="colFontStatus" style="font-size:12px; color:#64748b; margin-top:6px;">기본 폰트(Pretendard) 사용 중</div>
+                </div>
+                <button id="btnGeneratePreview" class="action-btn" disabled>미리보기 생성</button>
             </div>
         </div>
         
         <div class="collage-preview-wrapper" id="collagePreviewArea" style="display: none;">
             <h3 style="margin: 0 0 10px 0; color: var(--primary); font-size: 16px;">1. 포트레이트 이름 및 순서 수정</h3>
-            <p class="help-text" style="margin-bottom: 15px;">드래그나 화살표 버튼으로 순서를 변경하고 파일명 텍스트를 수정할 수 있습니다.</p>
+            <p class="help-text" style="margin-bottom: 15px;">드래그나 화살표 버튼으로 순서를 변경하고 파일명 텍스트를 수정할 수 있습니다. 눈 아이콘으로 실루엣 처리를 켜고 끌 수 있습니다. 변경 사항은 자동으로 최종 미리보기에 반영됩니다.</p>
+            <div style="display:flex; justify-content:flex-end; margin-bottom: 10px;">
+                <button id="btnToggleAllNames" class="sub-btn" style="flex: 0 0 auto; padding: 8px 16px; display: none;">🔤 표정 이름 전체 끄기</button>
+            </div>
             <div class="collage-grid" id="collageGrid" style="margin-bottom: 25px;"></div>
             
             <h3 style="margin: 0 0 10px 0; color: var(--primary); font-size: 16px;">2. 최종 이미지 미리보기 및 설정</h3>
-            <p style="font-size:13px; color:#64748b; margin: 0 0 12px;">전신 이미지는 미리보기 위에서 <strong>마우스 휠로 배율</strong>을 조절하세요.</p>
+            <p style="font-size:13px; color:#64748b; margin: 0 0 12px;">전신 이미지는 미리보기 위에서 <strong>마우스 휠로 배율</strong>을 조절하세요. 아래 설정은 값을 바꾸면 자동으로 반영됩니다.</p>
             <div style="background: #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                 <div style="display:flex; gap:15px; flex-wrap: wrap; margin-bottom: 10px;">
                     <div style="flex:1;">
@@ -343,7 +356,6 @@
                         </div>
                     </div>
                 </div>
-                <button id="btnUpdateFinalPreview" class="sub-btn" style="margin-top: 5px; width: 100%; background: var(--primary); color: white;">🔄 최종 이미지 미리보기 갱신</button>
             </div>
 
             <div id="canvasWheelHint" style="text-align:center; font-size:12px; color:#94a3b8; margin-bottom:6px;">
@@ -375,6 +387,7 @@
             <input type="file" id="fileCutin" accept="image/*" multiple style="margin-top: 10px; border: none; background: #f8fafc; padding: 10px; width: 100%; cursor: pointer;">
             <div id="cutinFileCount" class="file-count" style="margin-top: 15px;">선택된 파일: 0개</div>
             <div id="cutinFileList" class="file-list-container" style="display: none;"></div>
+            <button id="btnClearCutinFiles" class="sub-btn danger" style="margin-top: 10px; display: none;">🗑️ 첨부 파일 전체 초기화</button>
         </div>
 
         <h3 style="color: var(--primary); margin-bottom: 10px;">3-1. 컷인 다중 추출</h3>
@@ -417,29 +430,6 @@
     </div>
 </div>
 
-<div class="modal-overlay" id="ccfoliaModal">
-    <div class="modal-box">
-        <h3>🎲 코코포리아 룸 데이터로 내보내기</h3>
-        <div>
-            <label style="margin-bottom:6px;">캐릭터 이름</label>
-            <input type="text" id="ccfoliaCharName" placeholder="캐릭터 이름">
-        </div>
-        <div>
-            <label style="margin-bottom:6px;">토큰 크기 (코코포리아 칸 수 기준)</label>
-            <input type="number" id="ccfoliaTokenSize" value="11">
-        </div>
-        <div>
-            <label style="margin-bottom:6px;">시드 .token 값</label>
-            <input type="text" id="ccfoliaSeedToken" placeholder="0.xxxxxxxx... (실제 코코포리아 내보내기에서 얻은 .token 파일 내용)">
-            <p style="font-size:12px; color:#94a3b8; margin: 6px 0 0;">코코포리아 방에서 [룸 설정 > 룸 데이터 > 내보내기]로 한 번 받은 zip을 풀어서 .token 파일 내용을 붙여넣어 주세요. 이후엔 자동 저장되어 다시 입력할 필요 없습니다.</p>
-        </div>
-        <div class="modal-btns">
-            <button class="btn-cancel" id="ccfoliaCancel">취소</button>
-            <button class="btn-confirm" id="ccfoliaConfirm">ZIP 생성</button>
-        </div>
-    </div>
-</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
@@ -452,6 +442,8 @@
     let globalSideScale = 1.0; 
     let sideOffsetX = 0;       
     let sideOffsetY = 0;       
+    let customFontName = null;      // 사용자 업로드 폰트의 CSS font-family 이름
+    let customFontDataUrl = null;   // 백업용 base64 data URL
 
     const BASE_OPTS = {
         viewMode: 0,
@@ -506,6 +498,8 @@
         const b = filename.replace(/\.[^/.]+$/, "");
         return `${b}${suffix}.png`;
     };
+
+    const getActiveFontFamily = () => customFontName ? `"${customFontName}"` : `"Pretendard", sans-serif`;
 
     const updatePreviewBg = (type) => {
         const chk = document.getElementById(`${type}Transparent`);
@@ -684,8 +678,10 @@
     const renderPortraitFileList = () => {
         const listEl = document.getElementById('portraitFileList');
         const countEl = document.getElementById('portraitFileCount');
+        const clearBtn = document.getElementById('btnClearPortraitFiles');
         listEl.innerHTML = '';
         countEl.innerText = `선택된 파일: ${f_pt.length}개`;
+        clearBtn.style.display = f_pt.length > 0 ? 'block' : 'none';
 
         if (f_pt.length === 0) {
             listEl.style.display = 'none';
@@ -743,6 +739,19 @@
         }
     });
 
+    document.getElementById('btnClearPortraitFiles').addEventListener('click', () => {
+        if (f_pt.length === 0) return;
+        if (!confirm('첨부된 반신 스탠딩 파일을 모두 초기화할까요? 콜라주 미리보기도 함께 초기화됩니다.')) return;
+        f_pt = [];
+        document.getElementById('filePortrait').value = '';
+        renderPortraitFileList();
+        document.getElementById('collageGrid').innerHTML = '';
+        document.getElementById('collagePreviewArea').style.display = 'none';
+        const cvs = document.getElementById('finalCollageCanvas');
+        cvs.style.display = 'none';
+        globalSideScale = 1.0; sideOffsetX = 0; sideOffsetY = 0;
+    });
+
     document.getElementById('ptSquareToggle').addEventListener('change', e => {
         document.getElementById('portraitH').disabled = e.target.checked;
         if(e.target.checked) document.getElementById('portraitH').value = document.getElementById('portraitW').value;
@@ -792,8 +801,10 @@
     const renderCutinFileList = () => {
         const listEl = document.getElementById('cutinFileList');
         const countEl = document.getElementById('cutinFileCount');
+        const clearBtn = document.getElementById('btnClearCutinFiles');
         listEl.innerHTML = '';
         countEl.innerText = `선택된 파일: ${f_ci.length}개`;
+        clearBtn.style.display = f_ci.length > 0 ? 'block' : 'none';
 
         if (f_ci.length === 0) {
             listEl.style.display = 'none';
@@ -845,6 +856,14 @@
         if (isFirstLoad) {
             loadCropper('ci');
         }
+    });
+
+    document.getElementById('btnClearCutinFiles').addEventListener('click', () => {
+        if (f_ci.length === 0) return;
+        if (!confirm('첨부된 컷인 파일을 모두 초기화할까요?')) return;
+        f_ci = [];
+        document.getElementById('fileCutin').value = '';
+        renderCutinFileList();
     });
 
     ['cutinW', 'cutinH'].forEach(id => document.getElementById(id).addEventListener('change', () => { 
@@ -973,7 +992,7 @@
     document.getElementById('btnCollageBackup').addEventListener('click', async () => {
         const items = document.querySelectorAll('.collage-item');
         if (items.length === 0) {
-            alert('저장할 콜라주 조각이 없습니다. 먼저 [미리보기 갱신]을 진행해주세요.');
+            alert('저장할 콜라주 조각이 없습니다. 먼저 [미리보기 생성]을 진행해주세요.');
             return;
         }
         document.getElementById('backupNameModal').classList.add('open');
@@ -996,12 +1015,26 @@
         try {
             const items = document.querySelectorAll('.collage-item');
             const collageData = [];
-            items.forEach(item => {
+            for (const item of items) {
+                const idx = parseInt(item.dataset.id, 10);
+                let originalBase64 = null;
+                const originalFile = (!isNaN(idx) && f_pt[idx]) ? f_pt[idx] : null;
+                if (originalFile) {
+                    originalBase64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(originalFile);
+                    });
+                }
                 collageData.push({
                     src: item.querySelector('img').src,
-                    name: item.querySelector('input').value
+                    name: item.querySelector('input').value,
+                    blinded: item.dataset.blinded === 'true',
+                    nameOff: item.dataset.nameOff === 'true',
+                    originalFileName: originalFile ? originalFile.name : null,
+                    originalSrc: originalBase64
                 });
-            });
+            }
 
             const settings = {
                 w: document.getElementById('colW').value,
@@ -1030,10 +1063,12 @@
             }
 
             const backupObj = {
-                type: "ssorang_collage_v1",
+                type: "ssorang_collage_v2",
                 items: collageData,
                 settings: settings,
-                sideImage: sideImageBase64
+                sideImage: sideImageBase64,
+                fontName: customFontName,
+                fontData: customFontDataUrl
             };
 
             const blob = new Blob([JSON.stringify(backupObj)], { type: "application/json" });
@@ -1046,6 +1081,17 @@
         }
     });
 
+    // data:URL -> File 객체 복원 (백업에서 원본 첨부 파일 복구용)
+    function dataURLToFile(dataUrl, filename) {
+        const arr = dataUrl.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) u8arr[n] = bstr.charCodeAt(n);
+        return new File([u8arr], filename, { type: mime });
+    }
+
     document.getElementById('importCollageJson').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -1054,7 +1100,7 @@
         reader.onload = async (ev) => {
             try {
                 const data = JSON.parse(ev.target.result);
-                if(data.type !== "ssorang_collage_v1") {
+                if(data.type !== "ssorang_collage_v1" && data.type !== "ssorang_collage_v2") {
                     throw new Error("올바른 쏘랑 커팅기 콜라주 백업 파일이 아닙니다.");
                 }
 
@@ -1075,13 +1121,7 @@
                 sideOffsetY = data.settings.sideOffsetY || 0;
 
                 if (data.sideImage) {
-                    const arr = data.sideImage.split(',');
-                    const mime = arr[0].match(/:(.*?);/)[1];
-                    const bstr = atob(arr[1]);
-                    let n = bstr.length;
-                    const u8arr = new Uint8Array(n);
-                    while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-                    const restoredFile = new File([u8arr], "side_image_backup.png", { type: mime });
+                    const restoredFile = dataURLToFile(data.sideImage, "side_image_backup.png");
                     const dt = new DataTransfer();
                     dt.items.add(restoredFile);
                     document.getElementById('colSideImg').files = dt.files;
@@ -1089,21 +1129,34 @@
                     document.getElementById('colSideImg').value = '';
                 }
 
+                // 백업에 포함된 사용자 폰트 복원
+                if (data.fontName && data.fontData) {
+                    try {
+                        await loadCustomFontFromDataUrl(data.fontName, data.fontData);
+                    } catch(fontErr) { console.warn('폰트 복원 실패:', fontErr); }
+                } else {
+                    customFontName = null; customFontDataUrl = null;
+                    document.getElementById('colFontStatus').innerText = '기본 폰트(Pretendard) 사용 중';
+                    document.getElementById('colFontFile').value = '';
+                }
+
+                // 백업된 원본 첨부 파일들을 f_pt에 복원 (ccfolia 내보내기에서 크롭본 대체 방지)
+                const restoredOriginals = [];
+                data.items.forEach((itemData) => {
+                    if (itemData.originalSrc && itemData.originalFileName) {
+                        restoredOriginals.push(dataURLToFile(itemData.originalSrc, itemData.originalFileName));
+                    } else {
+                        restoredOriginals.push(null);
+                    }
+                });
+                f_pt = restoredOriginals;
+                renderPortraitFileList();
+
                 const gridArea = document.getElementById('collageGrid');
                 gridArea.innerHTML = '';
                 
                 data.items.forEach((itemData, idx) => {
-                    const item = document.createElement('div');
-                    item.className = 'collage-item'; item.draggable = true; item.dataset.id = idx;
-                    const pImg = document.createElement('img'); pImg.src = itemData.src;
-                    const pInput = document.createElement('input'); pInput.type = 'text'; pInput.value = itemData.name;
-                    const controls = document.createElement('div'); controls.className = 'item-controls';
-                    const btnL = document.createElement('button'); btnL.innerText = '◀';
-                    const btnR = document.createElement('button'); btnR.innerText = '▶';
-                    btnL.onclick = () => { if(item.previousElementSibling) gridArea.insertBefore(item, item.previousElementSibling); };
-                    btnR.onclick = () => { if(item.nextElementSibling) gridArea.insertBefore(item.nextElementSibling, item); };
-                    controls.append(btnL, btnR); item.append(pImg, pInput, controls);
-                    gridArea.appendChild(item);
+                    createCollageItem(itemData.src, itemData.name, idx, !!itemData.blinded, !!itemData.nameOff);
                 });
 
                 document.getElementById('collagePreviewArea').style.display = 'block';
@@ -1177,6 +1230,7 @@
         const textColor = document.getElementById('colTextColor').value;
         const colMargin = parseInt(document.getElementById('colMargin').value);
         const gap = isNaN(colMargin) ? 15 : colMargin;
+        const fontFamily = getActiveFontFamily();
 
         const rows = Math.ceil(items.length / cols);
         const gridW = (cols * w) + ((cols - 1) * gap);
@@ -1215,21 +1269,44 @@
         }
 
         const offsetX = gap + (sideImg ? fixedSideW + gap : 0);
+
+        // 표정 그리드 영역은 스탠딩 이미지가 뒤로 비치지 않도록 불투명한 배경을 먼저 깐다
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(offsetX - gap / 2, 0, gridW + gap, cvs.height);
         
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             const imgSrc = item.querySelector('img').src;
             const text = item.querySelector('input').value;
+            const isBlinded = item.dataset.blinded === 'true';
+            const isNameOff = item.dataset.nameOff === 'true';
             const tx = offsetX + (i % cols)*(w + gap);
             const ty = gap + Math.floor(i / cols)*(h + gap);
             
             await new Promise(r => {
                 const tmpImg = new Image();
                 tmpImg.onload = () => {
-                    ctx.drawImage(tmpImg, tx, ty, w, h);
-                    if (text) {
+                    // 조각별 불투명 배경 (표정 뒤로 스탠딩이 비치지 않도록)
+                    ctx.fillStyle = '#f1f5f9';
+                    ctx.fillRect(tx, ty, w, h);
+
+                    if (isBlinded) {
+                        // 실루엣(검은색) 블라인드 처리: 알파 채널만 남기고 검게 칠함
+                        const off = document.createElement('canvas');
+                        off.width = w; off.height = h;
+                        const offCtx = off.getContext('2d');
+                        offCtx.drawImage(tmpImg, 0, 0, w, h);
+                        offCtx.globalCompositeOperation = 'source-in';
+                        offCtx.fillStyle = '#000000';
+                        offCtx.fillRect(0, 0, w, h);
+                        ctx.drawImage(off, tx, ty, w, h);
+                    } else {
+                        ctx.drawImage(tmpImg, tx, ty, w, h);
+                    }
+
+                    if (text && !isNameOff) {
                         const fs = Math.max(20, Math.floor(w * 0.12));
-                        ctx.font = `900 ${fs}px "Pretendard", sans-serif`;
+                        ctx.font = `900 ${fs}px ${fontFamily}`;
                         ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(4, fs * 0.25); ctx.lineJoin = 'round';
                         ctx.strokeText(text, tx + w/2, ty + h - (fs*0.2));
@@ -1250,14 +1327,14 @@
             ctx.textAlign = 'left'; ctx.textBaseline = 'top';
             let textY = gap;
             if (scenarioName) {
-                ctx.font = `900 ${scenarioSize}px "Pretendard", sans-serif`;
+                ctx.font = `900 ${scenarioSize}px ${fontFamily}`;
                 ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(4, scenarioSize * 0.2); ctx.lineJoin = 'round';
                 ctx.strokeText(scenarioName, gap + 10, textY);
                 ctx.fillStyle = textColor; ctx.fillText(scenarioName, gap + 10, textY);
                 textY += scenarioSize + 10;
             }
             if (charName) {
-                ctx.font = `900 ${charSize}px "Pretendard", sans-serif`;
+                ctx.font = `900 ${charSize}px ${fontFamily}`;
                 ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(4, charSize * 0.2); ctx.lineJoin = 'round';
                 ctx.strokeText(charName, gap + 10, textY);
                 ctx.fillStyle = textColor; ctx.fillText(charName, gap + 10, textY);
@@ -1274,6 +1351,84 @@
         }
         return cvs;
     }
+
+    // 미리보기 캔버스 자동 반영을 위한 디바운스 트리거
+    let autoPreviewTimer = null;
+    function scheduleAutoPreview() {
+        const previewArea = document.getElementById('collagePreviewArea');
+        if (!previewArea || previewArea.style.display === 'none') return;
+        if (!document.querySelectorAll('.collage-item').length) return;
+        clearTimeout(autoPreviewTimer);
+        autoPreviewTimer = setTimeout(() => { drawFinalCollage(false); }, 200);
+    }
+
+    function createCollageItem(src, name, idx, blinded, nameOff) {
+        const gridArea = document.getElementById('collageGrid');
+        const item = document.createElement('div');
+        item.className = 'collage-item' + (blinded ? ' blinded' : '');
+        item.draggable = true;
+        item.dataset.id = idx;
+        item.dataset.blinded = blinded ? 'true' : 'false';
+        item.dataset.nameOff = nameOff ? 'true' : 'false';
+
+        const pImg = document.createElement('img');
+        pImg.src = src;
+
+        const pInput = document.createElement('input');
+        pInput.type = 'text';
+        pInput.value = name;
+        pInput.addEventListener('input', scheduleAutoPreview);
+
+        const controls = document.createElement('div');
+        controls.className = 'item-controls';
+
+        const btnL = document.createElement('button');
+        btnL.innerText = '◀'; btnL.title = '앞으로 이동';
+        const btnR = document.createElement('button');
+        btnR.innerText = '▶'; btnR.title = '뒤로 이동';
+        btnL.onclick = () => { if(item.previousElementSibling) { gridArea.insertBefore(item, item.previousElementSibling); scheduleAutoPreview(); } };
+        btnR.onclick = () => { if(item.nextElementSibling) { gridArea.insertBefore(item.nextElementSibling, item); scheduleAutoPreview(); } };
+
+        const btnBlind = document.createElement('button');
+        btnBlind.className = 'blind-toggle' + (blinded ? ' on' : '');
+        btnBlind.innerText = '🙈';
+        btnBlind.title = '실루엣(검은색) 블라인드 켜기/끄기';
+        btnBlind.onclick = () => {
+            const nowBlinded = item.dataset.blinded !== 'true';
+            item.dataset.blinded = nowBlinded ? 'true' : 'false';
+            item.classList.toggle('blinded', nowBlinded);
+            btnBlind.classList.toggle('on', nowBlinded);
+            scheduleAutoPreview();
+        };
+
+        controls.append(btnL, btnBlind, btnR);
+        item.append(pImg, pInput, controls);
+        gridArea.appendChild(item);
+        updateToggleAllNamesBtn();
+    }
+
+    // 표정 이름 표시를 전체 일괄로 켜고 끄는 버튼
+    function updateToggleAllNamesBtn() {
+        const btn = document.getElementById('btnToggleAllNames');
+        if (!btn) return;
+        const items = document.querySelectorAll('.collage-item');
+        if (!items.length) { btn.style.display = 'none'; return; }
+        btn.style.display = 'inline-block';
+        const allOff = Array.from(items).every(it => it.dataset.nameOff === 'true');
+        btn.innerText = allOff ? '🔤 표정 이름 전체 켜기' : '🔤 표정 이름 전체 끄기';
+    }
+
+    document.getElementById('btnToggleAllNames').addEventListener('click', () => {
+        const items = document.querySelectorAll('.collage-item');
+        if (!items.length) return;
+        const allOff = Array.from(items).every(it => it.dataset.nameOff === 'true');
+        const nextOff = !allOff; // 하나라도 켜져 있으면 우선 전체를 끄고, 전부 꺼져 있으면 전체를 켠다
+        items.forEach(item => {
+            item.dataset.nameOff = nextOff ? 'true' : 'false';
+        });
+        updateToggleAllNamesBtn();
+        scheduleAutoPreview();
+    });
 
     document.getElementById('btnGeneratePreview').addEventListener('click', async function() {
         if (!c_col || f_pt.length === 0) return;
@@ -1320,17 +1475,7 @@
                                 
                                 if(canvas) {
                                     const b64 = canvas.toDataURL();
-                                    const item = document.createElement('div');
-                                    item.className = 'collage-item'; item.draggable = true; item.dataset.id = idx;
-                                    const pImg = document.createElement('img'); pImg.src = b64;
-                                    const pInput = document.createElement('input'); pInput.type = 'text'; pInput.value = getShortName(file.name);
-                                    const controls = document.createElement('div'); controls.className = 'item-controls';
-                                    const btnL = document.createElement('button'); btnL.innerText = '◀';
-                                    const btnR = document.createElement('button'); btnR.innerText = '▶';
-                                    btnL.onclick = () => { if(item.previousElementSibling) gridArea.insertBefore(item, item.previousElementSibling); };
-                                    btnR.onclick = () => { if(item.nextElementSibling) gridArea.insertBefore(item.nextElementSibling, item); };
-                                    controls.append(btnL, btnR); item.append(pImg, pInput, controls);
-                                    gridArea.appendChild(item);
+                                    createCollageItem(b64, getShortName(file.name), idx, false, false);
                                 }
                                 this.cropper.destroy(); 
                                 stage.innerHTML = ''; 
@@ -1346,19 +1491,56 @@
             stage.remove();
             await drawFinalCollage(false);
         } catch (e) { console.error(e); }
-        finally { btn.disabled = false; btn.innerText = '미리보기 갱신'; }
+        finally { btn.disabled = false; btn.innerText = '미리보기 생성'; }
     });
 
-    document.getElementById('btnUpdateFinalPreview').addEventListener('click', async function() {
-        this.disabled = true; this.innerText = "갱신 중...";
-        await drawFinalCollage(false);
-        this.disabled = false; this.innerText = "최종 이미지 미리보기 갱신";
+    // 설정값 변경 시 자동으로 최종 미리보기에 반영
+    ['colCols', 'colTextColor', 'colMargin', 'colScenarioName', 'colScenarioSize', 'colCharName', 'colCharSize'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', scheduleAutoPreview);
+    });
+    document.getElementById('colSideImg').addEventListener('change', () => {
+        globalSideScale = 1.0; sideOffsetX = 0; sideOffsetY = 0;
+        scheduleAutoPreview();
+    });
+
+    /* ==================================================
+       8-1. 사용자 폰트 업로드
+       ================================================== */
+    async function loadCustomFontFromDataUrl(fontName, dataUrl) {
+        const fontFace = new FontFace(fontName, `url(${dataUrl})`);
+        await fontFace.load();
+        document.fonts.add(fontFace);
+        customFontName = fontName;
+        customFontDataUrl = dataUrl;
+        document.getElementById('colFontStatus').innerText = `사용자 폰트 적용됨: ${fontName}`;
+        scheduleAutoPreview();
+    }
+
+    document.getElementById('colFontFile').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const statusEl = document.getElementById('colFontStatus');
+        statusEl.innerText = '폰트 로딩 중...';
+        try {
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            const fontName = 'CustomUserFont_' + file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+            await loadCustomFontFromDataUrl(fontName, dataUrl);
+        } catch (err) {
+            statusEl.innerText = '폰트 로딩 실패: ' + err.message;
+            customFontName = null; customFontDataUrl = null;
+        }
     });
 
     const gridEl = document.getElementById('collageGrid');
     let draggedItem = null;
     gridEl.addEventListener('dragstart', e => { draggedItem = e.target.closest('.collage-item'); setTimeout(()=>draggedItem.style.opacity='0.5',0); });
-    gridEl.addEventListener('dragend', () => { if(draggedItem){ draggedItem.style.opacity='1'; draggedItem = null; }});
+    gridEl.addEventListener('dragend', () => { if(draggedItem){ draggedItem.style.opacity='1'; draggedItem = null; scheduleAutoPreview(); }});
     gridEl.addEventListener('dragover', e => {
         e.preventDefault(); const t = e.target.closest('.collage-item');
         if (t && t !== draggedItem) {
@@ -1377,6 +1559,29 @@
        9. 코코포리아 룸 데이터(ZIP) 내보내기
        ================================================== */
 
+    const CCFOLIA_TOKEN_SIZE = 10; // 토큰 크기는 검증되지 않아 10으로 고정
+    const CCFOLIA_SEED_TOKEN = '0.' + '0'.repeat(64); // .token 값도 검증되지 않아 임의 고정값 사용
+
+    // 스테이터스/매개변수 라벨 고정 템플릿 (수치는 비워두고 라벨만 등록)
+    const CCFOLIA_FIXED_STATUS = [
+        { label: 'HP', value: 0, max: 0 },
+        { label: 'MP', value: 0, max: 0 },
+        { label: 'SAN', value: 0, max: 0 },
+        { label: '행운', value: 0, max: 0 }
+    ];
+    const CCFOLIA_FIXED_PARAMS = [
+        { label: '피해보너스', value: '' },
+        { label: '체구', value: '' },
+        { label: '건강', value: '' },
+        { label: '교육', value: '' },
+        { label: '근력', value: '' },
+        { label: '민첩', value: '' },
+        { label: '외모', value: '' },
+        { label: '정신', value: '' },
+        { label: '지능', value: '' },
+        { label: '크기', value: '' }
+    ];
+
     // Firestore 스타일 랜덤 ID (20자)
     function genFirestoreId() {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -1391,7 +1596,7 @@
         return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // data:URL -> Blob
+    // data:URL -> Blob (원본 파일을 못 찾을 때의 대체 경로용)
     function dataURLToBlob(dataUrl) {
         const arr = dataUrl.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
@@ -1402,11 +1607,28 @@
         return new Blob([u8arr], { type: mime });
     }
 
+    // 크롭된 미리보기 이미지(dataURL)를 검은색 실루엣 PNG Blob으로 변환
+    function silhouetteDataUrlToBlob(dataUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.createElement('canvas');
+                cvs.width = img.naturalWidth; cvs.height = img.naturalHeight;
+                const ctx = cvs.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                ctx.globalCompositeOperation = 'source-in';
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, cvs.width, cvs.height);
+                cvs.toBlob(b => resolve(b), 'image/png');
+            };
+            img.src = dataUrl;
+        });
+    }
+
     /**
-     * facesData: [{ label: '@기본', blob: <Blob> }, ...]
-     * seedToken: 실제 코코포리아 내보내기에서 얻은 .token 파일 내용 (텍스트 그대로)
+     * facesData: [{ label: '@기본', blob: <Blob|File> }, ...]  (원본 첨부 파일 그대로)
      */
-    async function exportToCcfoliaZip(charName, facesData, seedToken, tokenSize) {
+    async function exportToCcfoliaZip(charName, facesData) {
         const zip = new JSZip();
         const resources = {};
         const faces = [];
@@ -1415,9 +1637,10 @@
         for (const { label, blob } of facesData) {
             const buffer = await blob.arrayBuffer();
             const hash = await sha256Hex(buffer);
-            const filename = `${hash}.png`;
+            const ext = (blob.type && blob.type.split('/')[1]) ? blob.type.split('/')[1] : 'png';
+            const filename = `${hash}.${ext}`;
             zip.file(filename, buffer);
-            resources[filename] = { type: 'image/png' };
+            resources[filename] = { type: blob.type || 'image/png' };
             faces.push({ label, iconUrl: filename });
             if (!mainIconFilename) mainIconFilename = filename; // 첫 장을 메인 아이콘으로 지정
         }
@@ -1430,11 +1653,12 @@
                 characters: {
                     [charId]: {
                         name: charName, playerName: '', memo: '', initiative: 0, externalUrl: '',
-                        status: [], params: [],
+                        status: CCFOLIA_FIXED_STATUS.map(s => ({ ...s })),
+                        params: CCFOLIA_FIXED_PARAMS.map(p => ({ ...p })),
                         iconUrl: mainIconFilename,
                         faces,
                         x: 0, y: 0, z: 0, angle: 0,
-                        width: tokenSize, height: tokenSize,
+                        width: CCFOLIA_TOKEN_SIZE, height: CCFOLIA_TOKEN_SIZE,
                         active: true, secret: false, invisible: false, hideStatus: false,
                         color: '#3f51b5', roomId: null, commands: '',
                         speaking: false, diceSkin: {}, order: 1
@@ -1446,61 +1670,44 @@
         };
 
         zip.file('__data.json', JSON.stringify(dataJson));
-        zip.file('.token', seedToken); // ⚠️ 실제 코코포리아 내보내기에서 얻은 값을 그대로 재사용 (검증 필요)
+        zip.file('.token', CCFOLIA_SEED_TOKEN);
 
         return await zip.generateAsync({ type: 'blob' });
     }
 
-    document.getElementById('btnExportCcfolia').addEventListener('click', () => {
+    document.getElementById('btnExportCcfolia').addEventListener('click', async () => {
         const items = document.querySelectorAll('.collage-item');
         if (items.length === 0) {
-            alert('내보낼 포트레이트가 없습니다. 먼저 [미리보기 갱신]을 진행해주세요.');
-            return;
-        }
-        document.getElementById('ccfoliaCharName').value =
-            document.getElementById('colCharName').value.trim() || localStorage.getItem('ccfolia_charName') || '';
-        document.getElementById('ccfoliaTokenSize').value = localStorage.getItem('ccfolia_tokenSize') || '11';
-        document.getElementById('ccfoliaSeedToken').value = localStorage.getItem('ccfolia_seedToken') || '';
-        document.getElementById('ccfoliaModal').classList.add('open');
-    });
-
-    document.getElementById('ccfoliaCancel').addEventListener('click', () => {
-        document.getElementById('ccfoliaModal').classList.remove('open');
-    });
-
-    document.getElementById('ccfoliaConfirm').addEventListener('click', async () => {
-        const modal = document.getElementById('ccfoliaModal');
-        const charName = document.getElementById('ccfoliaCharName').value.trim() || '캐릭터';
-        const tokenSize = parseInt(document.getElementById('ccfoliaTokenSize').value) || 11;
-        const seedToken = document.getElementById('ccfoliaSeedToken').value.trim();
-
-        if (!seedToken) {
-            alert('시드 .token 값을 입력해주세요.\n(코코포리아 방에서 룸 데이터를 한 번 내보내기하면 zip 안에 .token 파일로 들어있습니다.)');
+            alert('내보낼 포트레이트가 없습니다. 먼저 [미리보기 생성]을 진행해주세요.');
             return;
         }
 
-        localStorage.setItem('ccfolia_charName', charName);
-        localStorage.setItem('ccfolia_tokenSize', tokenSize);
-        localStorage.setItem('ccfolia_seedToken', seedToken);
-
-        modal.classList.remove('open');
-
+        const charName = document.getElementById('colCharName').value.trim() || '캐릭터';
         const btn = document.getElementById('btnExportCcfolia');
         const originalText = btn.innerText;
         btn.disabled = true; btn.innerText = 'ZIP 생성 중...';
 
         try {
-            const items = document.querySelectorAll('.collage-item');
             const facesData = [];
             for (const item of items) {
                 let label = item.querySelector('input').value.trim();
                 if (!label.startsWith('@')) label = `@${label}`;
-                const imgSrc = item.querySelector('img').src;
-                const blob = dataURLToBlob(imgSrc);
+
+                // 실루엣 처리된 표정은 검은 실루엣 이미지로, 그 외에는 크롭 버전이 아닌 원본 첨부 파일을 그대로 사용
+                const idx = parseInt(item.dataset.id, 10);
+                const isBlinded = item.dataset.blinded === 'true';
+                let blob = null;
+                if (isBlinded) {
+                    blob = await silhouetteDataUrlToBlob(item.querySelector('img').src);
+                } else if (!isNaN(idx) && f_pt[idx]) {
+                    blob = f_pt[idx];
+                }
+                if (!blob) blob = dataURLToBlob(item.querySelector('img').src); // 원본을 못 찾을 때의 대체 경로
+
                 facesData.push({ label, blob });
             }
 
-            const zipBlob = await exportToCcfoliaZip(charName, facesData, seedToken, tokenSize);
+            const zipBlob = await exportToCcfoliaZip(charName, facesData);
             safeDownloadBlob(zipBlob, `${charName}_코코포리아룸데이터.zip`);
         } catch (e) {
             alert('ZIP 생성 중 오류가 발생했습니다: ' + e.message);
