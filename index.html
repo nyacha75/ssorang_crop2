@@ -373,6 +373,9 @@
                     <input type="file" id="importCollageJson" accept=".json" style="display: none;">
                 </label>
             </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="btnExportCcfolia" class="sub-btn" style="flex: 1; padding: 12px; background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 15px;">🎲 코코포리아 룸 데이터 (ZIP)</button>
+            </div>
         </div>
     </div>
 
@@ -1676,6 +1679,186 @@
         this.innerText = '포트레이트 모음집 다운로드'; this.disabled = false;
     });
 
+    /* ==================================================
+       9. 코코포리아 룸 데이터(ZIP) 내보내기
+       ================================================== */
+
+    const CCFOLIA_TOKEN_SIZE = 10; // 토큰 크기는 검증되지 않아 10으로 고정
+    const CCFOLIA_SEED_TOKEN = '0.' + '0'.repeat(64); // .token 값도 검증되지 않아 임의 고정값 사용
+
+    // 스테이터스/매개변수 라벨 고정 템플릿 (수치는 비워두고 라벨만 등록)
+    const CCFOLIA_FIXED_STATUS = [
+        { label: 'HP', value: 0, max: 0 },
+        { label: 'MP', value: 0, max: 0 },
+        { label: 'SAN', value: 0, max: 0 },
+        { label: '행운', value: 0, max: 0 }
+    ];
+    const CCFOLIA_FIXED_PARAMS = [
+        { label: '피해보너스', value: '' },
+        { label: '체구', value: '' },
+        { label: '건강', value: '' },
+        { label: '교육', value: '' },
+        { label: '근력', value: '' },
+        { label: '민첩', value: '' },
+        { label: '외모', value: '' },
+        { label: '정신', value: '' },
+        { label: '지능', value: '' },
+        { label: '크기', value: '' }
+    ];
+
+    // Firestore 스타일 랜덤 ID (20자)
+    function genFirestoreId() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let id = '';
+        for (let i = 0; i < 20; i++) id += chars[Math.floor(Math.random() * chars.length)];
+        return id;
+    }
+
+    // ArrayBuffer -> SHA-256 hex (코코포리아 리소스 파일명 규칙 추정)
+    async function sha256Hex(buffer) {
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // data:URL -> Blob (원본 파일을 못 찾을 때의 대체 경로용)
+    function dataURLToBlob(dataUrl) {
+        const arr = dataUrl.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) u8arr[n] = bstr.charCodeAt(n);
+        return new Blob([u8arr], { type: mime });
+    }
+
+    // 크롭된 미리보기 이미지(dataURL)를 검은색 실루엣 PNG Blob으로 변환
+    function silhouetteDataUrlToBlob(dataUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.createElement('canvas');
+                cvs.width = img.naturalWidth; cvs.height = img.naturalHeight;
+                const ctx = cvs.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                ctx.globalCompositeOperation = 'source-in';
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, cvs.width, cvs.height);
+                cvs.toBlob(b => resolve(b), 'image/png');
+            };
+            img.src = dataUrl;
+        });
+    }
+
+    // 크롭된 미리보기 이미지(dataURL)를 블러 처리된 PNG Blob으로 변환
+    function blurDataUrlToBlob(dataUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.createElement('canvas');
+                cvs.width = img.naturalWidth; cvs.height = img.naturalHeight;
+                const ctx = cvs.getContext('2d');
+                const blurPx = Math.max(6, Math.floor(img.naturalWidth * 0.045));
+                ctx.filter = `blur(${blurPx}px)`;
+                ctx.drawImage(img, 0, 0);
+                cvs.toBlob(b => resolve(b), 'image/png');
+            };
+            img.src = dataUrl;
+        });
+    }
+
+    /**
+     * facesData: [{ label: '@기본', blob: <Blob|File> }, ...]  (원본 첨부 파일 그대로, 또는 실루엣/블러 처리된 이미지)
+     */
+    async function exportToCcfoliaZip(charName, facesData) {
+        const zip = new JSZip();
+        const resources = {};
+        const faces = [];
+        let mainIconFilename = null;
+
+        for (const { label, blob } of facesData) {
+            const buffer = await blob.arrayBuffer();
+            const hash = await sha256Hex(buffer);
+            const ext = (blob.type && blob.type.split('/')[1]) ? blob.type.split('/')[1] : 'png';
+            const filename = `${hash}.${ext}`;
+            zip.file(filename, buffer);
+            resources[filename] = { type: blob.type || 'image/png' };
+            faces.push({ label, iconUrl: filename });
+            if (!mainIconFilename) mainIconFilename = filename; // 첫 장을 메인 아이콘으로 지정
+        }
+
+        const charId = genFirestoreId();
+        const dataJson = {
+            meta: { version: '1.1.0' },
+            entities: {
+                room: {}, items: {}, decks: {}, notes: {},
+                characters: {
+                    [charId]: {
+                        name: charName, playerName: '', memo: '', initiative: 0, externalUrl: '',
+                        status: CCFOLIA_FIXED_STATUS.map(s => ({ ...s })),
+                        params: CCFOLIA_FIXED_PARAMS.map(p => ({ ...p })),
+                        iconUrl: mainIconFilename,
+                        faces,
+                        x: 0, y: 0, z: 0, angle: 0,
+                        width: CCFOLIA_TOKEN_SIZE, height: CCFOLIA_TOKEN_SIZE,
+                        active: true, secret: false, invisible: false, hideStatus: false,
+                        color: '#3f51b5', roomId: null, commands: '',
+                        speaking: false, diceSkin: {}, order: 1
+                    }
+                },
+                effects: {}, scenes: {}, savedatas: {}, snapshots: {}
+            },
+            resources
+        };
+
+        zip.file('__data.json', JSON.stringify(dataJson));
+        zip.file('.token', CCFOLIA_SEED_TOKEN);
+
+        return await zip.generateAsync({ type: 'blob' });
+    }
+
+    document.getElementById('btnExportCcfolia').addEventListener('click', async () => {
+        const items = document.querySelectorAll('.collage-item');
+        if (items.length === 0) {
+            alert('내보낼 포트레이트가 없습니다. 먼저 반신 스탠딩 파일을 추가해주세요.');
+            return;
+        }
+
+        const charName = document.getElementById('colCharName').value.trim() || '캐릭터';
+        const btn = document.getElementById('btnExportCcfolia');
+        const originalText = btn.innerText;
+        btn.disabled = true; btn.innerText = 'ZIP 생성 중...';
+
+        try {
+            const facesData = [];
+            for (const item of items) {
+                let label = item.querySelector('input').value.trim();
+                if (!label.startsWith('@')) label = `@${label}`;
+
+                // 실루엣/블러 처리된 표정은 해당 효과가 적용된 이미지로, 그 외에는 크롭 버전이 아닌 원본 첨부 파일을 그대로 사용
+                const fileId = item.dataset.id;
+                const blindMode = item.dataset.blindMode || 'none';
+                let blob = null;
+                if (blindMode === 'silhouette') {
+                    blob = await silhouetteDataUrlToBlob(item.querySelector('img').src);
+                } else if (blindMode === 'blur') {
+                    blob = await blurDataUrlToBlob(item.querySelector('img').src);
+                } else {
+                    const originalFile = findFileByPtId(fileId);
+                    if (originalFile) blob = originalFile;
+                }
+                if (!blob) blob = dataURLToBlob(item.querySelector('img').src); // 원본을 못 찾을 때의 대체 경로
+
+                facesData.push({ label, blob });
+            }
+
+            const zipBlob = await exportToCcfoliaZip(charName, facesData);
+            safeDownloadBlob(zipBlob, `${charName}_코코포리아룸데이터.zip`);
+        } catch (e) {
+            alert('ZIP 생성 중 오류가 발생했습니다: ' + e.message);
+        } finally {
+            btn.disabled = false; btn.innerText = originalText;
+        }
+    });
 </script>
 </body>
 </html>
