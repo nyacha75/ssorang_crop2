@@ -412,6 +412,9 @@
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button id="btnExportCcfolia" class="sub-btn" style="flex: 1; padding: 12px; background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; font-size: 15px;">🎲 코코포리아 룸 데이터 (ZIP)</button>
             </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="btnDownloadCollagePieces" class="sub-btn" style="flex: 1; padding: 12px; background-color: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; font-size: 15px;">파일명 반영 원본 다운로드</button>
+            </div>
         </div>
     </div>
 
@@ -459,8 +462,8 @@
                         <input type="checkbox" id="ciFineZoom"><label for="ciFineZoom" style="margin:0; cursor:pointer; font-weight:normal; font-size:13.5px;">마우스 휠 감도 높이기</label>
                     </div>
                 </div>
-                <button id="btnCropCutin" class="action-btn" disabled>다운로드</button>
-                <button id="btnMergeCutinSingle" class="sub-btn" style="padding: 12px; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 14px;" disabled>🖼 파일 개수와 상관없이 한 장으로 합쳐 다운로드</button>
+                <button id="btnDownloadCutinEach" class="action-btn" disabled>📥 한 장씩 다운로드</button>
+                <button id="btnCropCutin" class="sub-btn" style="padding: 12px; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 14px;" disabled>📦 압축 파일로 다운로드 (ZIP)</button>
                 <div class="btn-row" style="margin-top: 10px;">
                     <button id="btnCiCropBackup" class="sub-btn" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;" disabled>💾 크롭 설정 백업</button>
                     <label class="sub-btn" style="cursor: pointer; margin: 0; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; text-align: center;">
@@ -721,8 +724,8 @@
                     }
                     if (type === 'ci') {
                         c_ci = inst; updatePreviewBg('ci');
-                        const mergeBtn = document.getElementById('btnMergeCutinSingle');
-                        if (mergeBtn) mergeBtn.disabled = false;
+                        const downloadEachBtn = document.getElementById('btnDownloadCutinEach');
+                        if (downloadEachBtn) downloadEachBtn.disabled = false;
                         const ciBackupBtn = document.getElementById('btnCiCropBackup');
                         if (ciBackupBtn) ciBackupBtn.disabled = false;
                         applyPendingCropByType('ci');
@@ -1084,7 +1087,7 @@
             listEl.style.display = 'none';
             if(c_ci) { c_ci.destroy(); c_ci = null; document.getElementById('imgCutin').src = ''; }
             const btn1 = document.getElementById('btnCropCutin'); if(btn1) btn1.disabled = true;
-            const btn2 = document.getElementById('btnMergeCutinSingle'); if(btn2) btn2.disabled = true;
+            const btn2 = document.getElementById('btnDownloadCutinEach'); if(btn2) btn2.disabled = true;
             const btn3 = document.getElementById('btnCiCropBackup'); if(btn3) btn3.disabled = true;
             return;
         }
@@ -1143,6 +1146,74 @@
         });
     };
 
+    // 첨부 파일 목록에서 개별 파일 하나만 현재 크롭 설정대로 잘라 바로 다운로드 (기본 다운로드 방식)
+    // 첨부된 컷인 파일 전체를 현재 크롭 설정대로 한 장씩(압축 없이) 순서대로 다운로드 (기본 다운로드 방식)
+    document.getElementById('btnDownloadCutinEach').addEventListener('click', async () => {
+        if (!c_ci || f_ci.length === 0) return;
+
+        const btn = document.getElementById('btnDownloadCutinEach');
+        const originalText = btn.innerText;
+        btn.disabled = true; btn.innerText = '다운로드 중...';
+
+        try {
+            const wrapEl = document.getElementById('ciBoxWrap');
+            const cW = wrapEl.clientWidth;
+            const cH = wrapEl.clientHeight;
+            const canvasData = c_ci.getCanvasData();
+            const w = parseInt(document.getElementById('cutinW').value) || 1200;
+            const h = parseInt(document.getElementById('cutinH').value) || 400;
+            const isTransparent = document.getElementById('ciTransparent').checked;
+            const fillColor = isTransparent ? 'transparent' : document.getElementById('ciColorPicker').value;
+
+            const stage = document.createElement('div');
+            stage.style.cssText = `position:fixed; top:0; left:0; width:${cW}px; height:${cH}px; opacity:0.001; pointer-events:none; z-index:-9999;`;
+            document.body.appendChild(stage);
+
+            for (let file of f_ci) {
+                await new Promise((resolve) => {
+                    const img = new Image();
+                    img.style.display = 'block';
+                    img.style.maxWidth = '100%';
+                    img.onload = () => {
+                        new Cropper(img, {
+                            viewMode: 0, autoCropArea: 1, cropBoxMovable: false, cropBoxResizable: false,
+                            center: false, guides: false, highlight: false, background: false,
+                            aspectRatio: cW / cH,
+                            minContainerWidth: cW, minContainerHeight: cH,
+                            ready() {
+                                this.cropper.setCropBoxData({ left: 0, top: 0, width: cW, height: cH });
+                                this.cropper.setCanvasData(canvasData);
+                                const canvas = this.cropper.getCroppedCanvas({
+                                    width: w, height: h, fillColor: fillColor, imageSmoothingQuality: 'high'
+                                });
+                                if (canvas) {
+                                    canvas.toBlob(blob => {
+                                        safeDownloadBlob(blob, getNewFilename(file.name, '_컷인'));
+                                        this.cropper.destroy();
+                                        stage.innerHTML = '';
+                                        resolve();
+                                    }, 'image/png');
+                                } else {
+                                    this.cropper.destroy();
+                                    stage.innerHTML = '';
+                                    resolve();
+                                }
+                            }
+                        });
+                    };
+                    img.onerror = resolve;
+                    img.src = URL.createObjectURL(file);
+                    stage.appendChild(img);
+                });
+            }
+            stage.remove();
+        } catch (e) {
+            alert('다운로드 중 오류가 발생했습니다: ' + e.message);
+        } finally {
+            btn.disabled = false; btn.innerText = originalText;
+        }
+    });
+
     document.getElementById('fileCutin').addEventListener('change', e => {
         if(!e.target.files.length) return;
         const isFirstLoad = f_ci.length === 0;
@@ -1197,7 +1268,7 @@
         modal.classList.remove('open');
         const customZipName = document.getElementById('zipNameInput').value.trim() || 'AhpuhVOID_Fighting';
 
-        let c_target, f_target, w, h, btn, wrapElId, suffix;
+        let c_target, f_target, w, h, btn, wrapElId, suffix, defaultLabel;
 
         if (targetTab === 'pt') {
             btn = document.getElementById('btnCropPortrait');
@@ -1207,6 +1278,7 @@
             h = document.getElementById('ptSquareToggle').checked ? w : (parseInt(document.getElementById('portraitH').value) || 800);
             wrapElId = 'ptBoxWrap';
             suffix = '';
+            defaultLabel = '전체 파일 개별 추출 (ZIP)';
         } else if (targetTab === 'ci') {
             btn = document.getElementById('btnCropCutin');
             c_target = c_ci;
@@ -1215,6 +1287,7 @@
             h = parseInt(document.getElementById('cutinH').value) || 400;
             wrapElId = 'ciBoxWrap';
             suffix = '_컷인';
+            defaultLabel = '📦 압축 파일로 다운로드 (ZIP)';
         }
 
         btn.disabled = true; btn.innerText = '압축 파일 생성 중...';
@@ -1278,92 +1351,7 @@
         } catch (e) {
             alert('ZIP 저장 중 오류 발생: ' + e.message);
         } finally {
-            btn.disabled = false; btn.innerText = '전체 파일 개별 추출 (ZIP)';
-        }
-    });
-
-    /* ==================================================
-       7-1. 컷인 - 여러 장을 한 장의 파일로 합쳐 다운로드
-       ================================================== */
-    document.getElementById('btnMergeCutinSingle').addEventListener('click', async () => {
-        if (!c_ci || f_ci.length === 0) return;
-
-        const btn = document.getElementById('btnMergeCutinSingle');
-        const originalText = btn.innerText;
-        btn.disabled = true; btn.innerText = '한 장으로 합치는 중...';
-
-        try {
-            const wrapEl = document.getElementById('ciBoxWrap');
-            const cW = wrapEl.clientWidth;
-            const cH = wrapEl.clientHeight;
-            const canvasData = c_ci.getCanvasData();
-            const w = parseInt(document.getElementById('cutinW').value) || 1200;
-            const h = parseInt(document.getElementById('cutinH').value) || 400;
-            const isTransparent = document.getElementById('ciTransparent').checked;
-            const fillColor = isTransparent ? 'transparent' : document.getElementById('ciColorPicker').value;
-
-            const stage = document.createElement('div');
-            stage.style.cssText = `position:fixed; top:0; left:0; width:${cW}px; height:${cH}px; opacity:0.001; pointer-events:none; z-index:-9999;`;
-            document.body.appendChild(stage);
-
-            // 현재 크롭 좌표/배율을 그대로 적용해 모든 파일을 동일하게 자름
-            const croppedCanvases = [];
-            for (let file of f_ci) {
-                await new Promise((resolve) => {
-                    const img = new Image();
-                    img.style.display = 'block';
-                    img.style.maxWidth = '100%';
-                    img.onload = () => {
-                        new Cropper(img, {
-                            viewMode: 0, autoCropArea: 1, cropBoxMovable: false, cropBoxResizable: false,
-                            center: false, guides: false, highlight: false, background: false,
-                            aspectRatio: cW / cH,
-                            minContainerWidth: cW, minContainerHeight: cH,
-                            ready() {
-                                this.cropper.setCropBoxData({ left: 0, top: 0, width: cW, height: cH });
-                                this.cropper.setCanvasData(canvasData);
-                                const canvas = this.cropper.getCroppedCanvas({
-                                    width: w, height: h, fillColor: fillColor, imageSmoothingQuality: 'high'
-                                });
-                                if (canvas) croppedCanvases.push(canvas);
-                                this.cropper.destroy();
-                                stage.innerHTML = '';
-                                resolve();
-                            }
-                        });
-                    };
-                    img.onerror = resolve;
-                    img.src = URL.createObjectURL(file);
-                    stage.appendChild(img);
-                });
-            }
-            stage.remove();
-
-            if (!croppedCanvases.length) throw new Error('합칠 이미지를 찾지 못했습니다.');
-
-            // 파일이 몇 장이든 세로로 이어붙여 하나의 캔버스(=하나의 파일)로 만든다
-            const mergedW = w;
-            const mergedH = h * croppedCanvases.length;
-            const mergedCanvas = document.createElement('canvas');
-            mergedCanvas.width = mergedW;
-            mergedCanvas.height = mergedH;
-            const ctx = mergedCanvas.getContext('2d');
-            if (!isTransparent) {
-                ctx.fillStyle = fillColor;
-                ctx.fillRect(0, 0, mergedW, mergedH);
-            }
-            croppedCanvases.forEach((cv, i) => {
-                ctx.drawImage(cv, 0, i * h);
-            });
-
-            mergedCanvas.toBlob(blob => {
-                if (!blob) throw new Error('이미지 생성에 실패했습니다.');
-                safeDownloadBlob(blob, `컷인_합본_${croppedCanvases.length}장.png`);
-            }, 'image/png');
-        } catch (e) {
-            alert('한 장으로 합치는 중 오류가 발생했습니다: ' + e.message);
-        } finally {
-            btn.disabled = false; btn.innerText = originalText;
+            btn.disabled = false; btn.innerText = defaultLabel;
         }
     });
 
@@ -2207,19 +2195,10 @@
                 let label = item.querySelector('input').value.trim();
                 if (!label.startsWith('@')) label = `@${label}`;
 
-                // 실루엣/블러 처리된 표정은 해당 효과가 적용된 이미지로, 그 외에는 크롭 버전이 아닌 원본 첨부 파일을 그대로 사용
+                // 실루엣/블러 설정과 무관하게 항상 원본(가려지지 않은) 이미지 사용: 크롭 전 원본 첨부 파일이 있으면 그것을, 없으면 크롭본을 사용
                 const fileId = item.dataset.id;
-                const blindMode = item.dataset.blindMode || 'none';
-                let blob = null;
-                if (blindMode === 'silhouette') {
-                    blob = await silhouetteDataUrlToBlob(item.querySelector('img').src);
-                } else if (blindMode === 'blur') {
-                    blob = await blurDataUrlToBlob(item.querySelector('img').src);
-                } else {
-                    const originalFile = findFileByPtId(fileId);
-                    if (originalFile) blob = originalFile;
-                }
-                if (!blob) blob = dataURLToBlob(item.querySelector('img').src); // 원본을 못 찾을 때의 대체 경로
+                const originalFile = findFileByPtId(fileId);
+                const blob = originalFile || dataURLToBlob(item.querySelector('img').src);
 
                 facesData.push({ label, blob });
             }
@@ -2228,6 +2207,36 @@
             safeDownloadBlob(zipBlob, `${charName}_코코포리아룸데이터.zip`);
         } catch (e) {
             alert('ZIP 생성 중 오류가 발생했습니다: ' + e.message);
+        } finally {
+            btn.disabled = false; btn.innerText = originalText;
+        }
+    });
+
+    // 포트레이트 모아보기 완료 후, 조각별로 '캐릭터명_표정' 파일명의 원본(자르기 해상도, 실루엣/블러 미반영) PNG로 개별 다운로드
+    document.getElementById('btnDownloadCollagePieces').addEventListener('click', async () => {
+        const items = document.querySelectorAll('.collage-item');
+        if (items.length === 0) {
+            alert('다운로드할 포트레이트가 없습니다. 먼저 반신 스탠딩 파일을 추가해주세요.');
+            return;
+        }
+
+        const charName = document.getElementById('colCharName').value.trim() || '캐릭터';
+        const btn = document.getElementById('btnDownloadCollagePieces');
+        const originalText = btn.innerText;
+        btn.disabled = true; btn.innerText = '다운로드 중...';
+
+        try {
+            let idx = 1;
+            for (const item of items) {
+                const exprName = item.querySelector('input').value.trim() || `표정${idx}`;
+                // 실루엣/블러 설정과 무관하게 항상 원본(가려지지 않은) 크롭 이미지를 사용
+                const blob = dataURLToBlob(item.querySelector('img').src);
+                safeDownloadBlob(blob, `${charName}_${exprName}.png`);
+                idx++;
+                await new Promise(r => setTimeout(r, 150)); // 브라우저가 연속 다운로드를 막지 않도록 약간의 간격을 둠
+            }
+        } catch (e) {
+            alert('다운로드 중 오류가 발생했습니다: ' + e.message);
         } finally {
             btn.disabled = false; btn.innerText = originalText;
         }
