@@ -75,6 +75,7 @@
             border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; transition: 0.2s;
         }
         .sub-btn:hover { background-color: #cbd5e1; }
+        .sub-btn:disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
         .sub-btn.danger { background-color: #fee2e2; color: #b91c1c; }
         .sub-btn.danger:hover { background-color: #fecaca; }
         input[type="range"] { flex: 1; cursor: pointer; }
@@ -98,6 +99,14 @@
             width: 16px; height: 16px; border-radius: 50%; transition: 0.2s;
         }
         .file-item-delete:hover { background: #fee2e2; }
+        .file-item-move {
+            background: #eef2f7; border: 1px solid #cbd5e1; color: #334155; font-weight: bold;
+            cursor: pointer; padding: 0; font-size: 11px; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            width: 18px; height: 18px; border-radius: 4px; transition: 0.2s; flex: 0 0 auto;
+        }
+        .file-item-move:hover:not(:disabled) { background: #dbe4f0; }
+        .file-item-move:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .divider { border: 0; border-top: 2px dashed #cbd5e1; margin: 30px 0; width: 100%; }
 
@@ -233,6 +242,16 @@
 
         <h3 style="color: var(--primary); margin-bottom: 10px;">2-1. 코코포리아 스탠딩</h3>
         <p class="help-text" style="margin-bottom: 15px;">여러 장의 파일을 동일한 좌표와 배율로 잘라 <strong style="color:var(--primary);">원본 파일명 그대로</strong> 개별 투명 PNG로 추출합니다.</p>
+
+        <div style="background:#eff6ff; border:1px dashed #bfdbfe; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span style="font-size:14px; color:#1d4ed8; font-weight:700; white-space:nowrap;">💾 저장해둔 크롭 설정이 있나요?</span>
+            <span style="font-size:12.5px; color:#64748b; flex:1; min-width:180px;">파일을 첨부하지 않아도 먼저 불러올 수 있고, 이후 파일을 첨부하면 자동으로 같은 위치·배율·회전이 적용됩니다.</span>
+            <label class="sub-btn" style="flex: 0 0 auto; padding: 10px 16px; cursor: pointer; margin: 0; background-color: #ffffff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 14px; text-align: center;">
+                📂 크롭 설정 불러오기
+                <input type="file" id="importPtCropJsonTop" accept=".json" style="display: none;">
+            </label>
+        </div>
+
         <div class="split-layout">
             <div class="split-left-wrapper">
                 <div class="canvas-box-wrap" id="ptBoxWrap">
@@ -271,6 +290,14 @@
                     </div>
                 </div>
                 <button id="btnCropPortrait" class="action-btn" disabled>전체 파일 개별 추출 (ZIP)</button>
+                <div class="btn-row" style="margin-top: 10px;">
+                    <button id="btnPtCropBackup" class="sub-btn" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;" disabled>💾 크롭 설정 백업</button>
+                    <label class="sub-btn" style="cursor: pointer; margin: 0; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; text-align: center;">
+                        📂 크롭 설정 불러오기
+                        <input type="file" id="importPtCropJson" accept=".json" style="display: none;">
+                    </label>
+                </div>
+                <p style="font-size:12px; color:#94a3b8; margin-top:6px; margin-bottom:0;">표정을 나중에 추가로 그려서 넣을 때, 이 백업을 불러오면 이전과 동일한 위치·배율·회전으로 맞출 수 있어요. 파일을 첨부하기 전에 불러와도 적용됩니다.</p>
             </div>
         </div>
 
@@ -279,6 +306,15 @@
         <h3 style="color: var(--primary); margin-bottom: 6px;">2-2. 포트레이트 모아보기 (콜라주)</h3>
         <p class="help-text" style="margin-bottom: 2px;">위와 독립적으로 새롭게 크롭하여 '_' 뒤에 오는 <strong style="color:var(--primary);">표정 이름이 자동으로 입력된</strong> 모음집을 만듭니다.</p>
         <p style="font-size: 13px; color: #94a3b8; margin-top: 0; margin-bottom: 15px;">하단의 백업/불러오기 버튼으로 이름과 배치 상태를 그대로 저장할 수 있습니다.</p>
+
+        <div style="background:#eff6ff; border:1px dashed #bfdbfe; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span style="font-size:14px; color:#1d4ed8; font-weight:700; white-space:nowrap;">💾 이전에 저장한 백업이 있나요?</span>
+            <span style="font-size:12.5px; color:#64748b; flex:1; min-width:180px;">파일을 첨부하지 않아도 백업(JSON)만으로 바로 불러올 수 있습니다.</span>
+            <label class="sub-btn" style="flex: 0 0 auto; padding: 10px 16px; cursor: pointer; margin: 0; background-color: #ffffff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 14px; text-align: center;">
+                📂 설정 불러오기
+                <input type="file" id="importCollageJsonTop" accept=".json" style="display: none;">
+            </label>
+        </div>
         
         <div class="split-layout">
             <div class="split-left-wrapper">
@@ -424,6 +460,15 @@
                     </div>
                 </div>
                 <button id="btnCropCutin" class="action-btn" disabled>다운로드</button>
+                <button id="btnMergeCutinSingle" class="sub-btn" style="padding: 12px; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 14px;" disabled>🖼 파일 개수와 상관없이 한 장으로 합쳐 다운로드</button>
+                <div class="btn-row" style="margin-top: 10px;">
+                    <button id="btnCiCropBackup" class="sub-btn" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;" disabled>💾 크롭 설정 백업</button>
+                    <label class="sub-btn" style="cursor: pointer; margin: 0; background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; text-align: center;">
+                        📂 크롭 설정 불러오기
+                        <input type="file" id="importCiCropJson" accept=".json" style="display: none;">
+                    </label>
+                </div>
+                <p style="font-size:12px; color:#94a3b8; margin-top:6px; margin-bottom:0;">컷인을 나중에 추가로 그려서 넣을 때, 이 백업을 불러오면 이전과 동일한 위치·배율로 맞출 수 있어요. 파일을 첨부하기 전에 불러와도 적용됩니다.</p>
             </div>
         </div>
     </div>
@@ -445,6 +490,65 @@
     let sideOffsetY = 0;       
     let customFontName = null;      // 사용자 업로드 폰트의 CSS font-family 이름
     let customFontDataUrl = null;   // 백업용 base64 data URL
+    // 크로퍼가 재생성될 때(백업 불러오기, 첨부파일 순서변경/삭제로 기준 이미지가 바뀔 때, 캔버스 크기 변경 시)
+    // 기존에 맞춰둔 확대/위치/회전을 잃지 않도록 임시 보관하는 값. type별로 하나씩만 유지.
+    // mode: 'verbatim'  -> 컨테이너 크기가 그대로일 때(파일 순서변경/삭제, 백업 불러오기): canvasData를 그대로 재적용
+    // mode: 'relative'  -> 컨테이너 크기가 바뀔 수 있을 때(캔버스 가로/세로/1:1 설정 변경): 확대 배율과 중심점을 유지한 채 재계산
+    let pendingCropByType = {};
+
+    const getCropperInstance = (type) => type === 'pt' ? c_pt : (type === 'col' ? c_col : (type === 'ci' ? c_ci : (type === 'hs' ? c_hs : null)));
+    const getRotateSliderIds = (type) => type === 'pt' ? { slider: 'portraitRotateSlider', value: 'ptRotateValue' } : (type === 'col' ? { slider: 'colRotateSlider', value: 'colRotateValue' } : null);
+
+    function stashCropVerbatim(type) {
+        const c = getCropperInstance(type);
+        if (!c) return;
+        const rot = getRotateSliderIds(type);
+        const rotation = rot ? (parseInt(document.getElementById(rot.slider).value) || 0) : 0;
+        pendingCropByType[type] = { mode: 'verbatim', rotation, canvasData: c.getCanvasData() };
+    }
+
+    function stashCropRelative(type) {
+        const c = getCropperInstance(type);
+        if (!c) return;
+        const box = document.getElementById(`${type}BoxWrap`);
+        const oldCW = box.clientWidth, oldCH = box.clientHeight;
+        const cd = c.getCanvasData();
+        const scale = cd.width / cd.naturalWidth; // 원본 이미지 px -> 화면 px 배율 (=확대 비율)
+        const centerImgX = (oldCW / 2 - cd.left) / scale; // 화면 중심에 대응하는 원본 이미지 좌표
+        const centerImgY = (oldCH / 2 - cd.top) / scale;
+        const rot = getRotateSliderIds(type);
+        const rotation = rot ? (parseInt(document.getElementById(rot.slider).value) || 0) : 0;
+        pendingCropByType[type] = { mode: 'relative', rotation, scale, centerImgX, centerImgY };
+    }
+
+    function applyPendingCropByType(type) {
+        const pending = pendingCropByType[type];
+        if (!pending) return;
+        const c = getCropperInstance(type);
+        if (!c) return;
+
+        const rot = getRotateSliderIds(type);
+        if (rot) {
+            document.getElementById(rot.slider).value = pending.rotation;
+            document.getElementById(rot.value).innerText = `${pending.rotation}°`;
+        }
+        c.rotateTo(pending.rotation || 0);
+
+        if (pending.mode === 'verbatim' && pending.canvasData) {
+            c.setCanvasData(pending.canvasData);
+        } else if (pending.mode === 'relative') {
+            const box = document.getElementById(`${type}BoxWrap`);
+            const newCW = box.clientWidth, newCH = box.clientHeight;
+            const cd = c.getCanvasData(); // 기본(전체 보기) 상태에서 naturalWidth/Height를 얻기 위함
+            const newWidth = cd.naturalWidth * pending.scale;
+            const newHeight = cd.naturalHeight * pending.scale;
+            const newLeft = newCW / 2 - pending.centerImgX * pending.scale;
+            const newTop = newCH / 2 - pending.centerImgY * pending.scale;
+            c.setCanvasData({ left: newLeft, top: newTop, width: newWidth, height: newHeight });
+        }
+
+        delete pendingCropByType[type];
+    }
 
     const genFilePtId = () => `fpt_${f_ptIdCounter++}`;
     const findFileByPtId = (id) => {
@@ -603,10 +707,26 @@
                     const inst = this.cropper;
                     inst.setCropBoxData({ left: 0, top: 0, width: cW, height: cH });
 
-                    if (type === 'hs') { c_hs = inst; updatePreviewBg('hs'); }
-                    if (type === 'pt') c_pt = inst;
-                    if (type === 'col') { c_col = inst; if (f_pt.length) scheduleCollageAutoGenerate(150); }
-                    if (type === 'ci') { c_ci = inst; updatePreviewBg('ci'); }
+                    if (type === 'hs') { c_hs = inst; updatePreviewBg('hs'); applyPendingCropByType('hs'); }
+                    if (type === 'pt') {
+                        c_pt = inst;
+                        const backupBtn = document.getElementById('btnPtCropBackup');
+                        if (backupBtn) backupBtn.disabled = false;
+                        applyPendingCropByType('pt');
+                    }
+                    if (type === 'col') {
+                        c_col = inst;
+                        applyPendingCropByType('col');
+                        if (f_pt.length) scheduleCollageAutoGenerate(150);
+                    }
+                    if (type === 'ci') {
+                        c_ci = inst; updatePreviewBg('ci');
+                        const mergeBtn = document.getElementById('btnMergeCutinSingle');
+                        if (mergeBtn) mergeBtn.disabled = false;
+                        const ciBackupBtn = document.getElementById('btnCiCropBackup');
+                        if (ciBackupBtn) ciBackupBtn.disabled = false;
+                        applyPendingCropByType('ci');
+                    }
                     
                     const btn = document.getElementById(btnId);
                     if(btn) btn.disabled = false;
@@ -626,9 +746,9 @@
             const targetId = e.target.dataset.target;
             document.getElementById(targetId).classList.add('active');
             e.target.classList.add('active');
-            if(targetId === 'tab-headshot') loadCropper('hs');
-            if(targetId === 'tab-portrait') { loadCropper('pt'); loadCropper('col'); }
-            if(targetId === 'tab-cutin') loadCropper('ci');
+            if(targetId === 'tab-headshot') { stashCropVerbatim('hs'); loadCropper('hs'); }
+            if(targetId === 'tab-portrait') { stashCropVerbatim('pt'); stashCropVerbatim('col'); loadCropper('pt'); loadCropper('col'); }
+            if(targetId === 'tab-cutin') { stashCropVerbatim('ci'); loadCropper('ci'); }
         });
     });
 
@@ -699,6 +819,7 @@
             if(c_pt) { c_pt.destroy(); c_pt = null; document.getElementById('imgPortrait').src = ''; }
             if(c_col) { c_col.destroy(); c_col = null; document.getElementById('imgCollage').src = ''; }
             const btn1 = document.getElementById('btnCropPortrait'); if(btn1) btn1.disabled = true;
+            const btnBackupPt = document.getElementById('btnPtCropBackup'); if(btnBackupPt) btnBackupPt.disabled = true;
             document.getElementById('collageGrid').innerHTML = '';
             document.getElementById('collagePreviewArea').style.display = 'none';
             const cvs = document.getElementById('finalCollageCanvas');
@@ -708,9 +829,37 @@
         }
 
         listEl.style.display = 'flex';
+        const swapPtFiles = (i, j) => {
+            [f_pt[i], f_pt[j]] = [f_pt[j], f_pt[i]];
+            [f_ptIds[i], f_ptIds[j]] = [f_ptIds[j], f_ptIds[i]];
+            renderPortraitFileList();
+            if (i === 0 || j === 0) {
+                // 기준(0번) 파일이 바뀌면 크로퍼를 새 기준 이미지로 다시 불러와야 하지만,
+                // 기존에 맞춰둔 크롭 위치/배율/회전은 그대로 유지한다
+                stashCropVerbatim('pt'); stashCropVerbatim('col');
+                loadCropper('pt'); loadCropper('col');
+            } else {
+                scheduleCollageAutoGenerate();
+            }
+        };
+
         f_pt.forEach((file, index) => {
             const item = document.createElement('div');
             item.className = 'file-item';
+
+            const moveLeftBtn = document.createElement('button');
+            moveLeftBtn.className = 'file-item-move';
+            moveLeftBtn.innerText = '◀';
+            moveLeftBtn.title = '앞으로 이동';
+            moveLeftBtn.disabled = index === 0;
+            moveLeftBtn.onclick = () => swapPtFiles(index, index - 1);
+
+            const moveRightBtn = document.createElement('button');
+            moveRightBtn.className = 'file-item-move';
+            moveRightBtn.innerText = '▶';
+            moveRightBtn.title = '뒤로 이동';
+            moveRightBtn.disabled = index === f_pt.length - 1;
+            moveRightBtn.onclick = () => swapPtFiles(index, index + 1);
             
             const name = document.createElement('span');
             name.innerText = file.name;
@@ -729,13 +878,17 @@
                 f_ptIds.splice(index, 1); // 파일-표정 이름 매칭이 밀리지 않도록 ID 배열도 같은 위치에서 함께 제거
                 renderPortraitFileList();
                 if (index === 0 && f_pt.length > 0) {
+                    // 기존에 맞춰둔 크롭 위치/배율/회전은 그대로 유지한 채 기준 이미지만 교체
+                    stashCropVerbatim('pt'); stashCropVerbatim('col');
                     loadCropper('pt'); loadCropper('col');
                 } else if (f_pt.length > 0) {
                     scheduleCollageAutoGenerate();
                 }
             };
 
+            item.appendChild(moveLeftBtn);
             item.appendChild(name);
+            item.appendChild(moveRightBtn);
             item.appendChild(delBtn);
             listEl.appendChild(item);
         });
@@ -778,20 +931,20 @@
     document.getElementById('ptSquareToggle').addEventListener('change', e => {
         document.getElementById('portraitH').disabled = e.target.checked;
         if(e.target.checked) document.getElementById('portraitH').value = document.getElementById('portraitW').value;
-        if(f_pt.length) loadCropper('pt');
+        if(f_pt.length) { stashCropRelative('pt'); loadCropper('pt'); }
     });
     ['portraitW', 'portraitH'].forEach(id => document.getElementById(id).addEventListener('change', () => { 
         if(document.getElementById('ptSquareToggle').checked) document.getElementById('portraitH').value = document.getElementById('portraitW').value;
-        if(f_pt.length) loadCropper('pt'); 
+        if(f_pt.length) { stashCropRelative('pt'); loadCropper('pt'); } 
     }));
     document.getElementById('colSquareToggle').addEventListener('change', e => {
         document.getElementById('colH').disabled = e.target.checked;
         if(e.target.checked) document.getElementById('colH').value = document.getElementById('colW').value;
-        if(f_pt.length) loadCropper('col');
+        if(f_pt.length) { stashCropRelative('col'); loadCropper('col'); }
     });
     ['colW', 'colH'].forEach(id => document.getElementById(id).addEventListener('change', () => { 
         if(document.getElementById('colSquareToggle').checked) document.getElementById('colH').value = document.getElementById('colW').value;
-        if(f_pt.length) loadCropper('col'); 
+        if(f_pt.length) { stashCropRelative('col'); loadCropper('col'); } 
     }));
 
     window.rotateManual = (type, deg) => {
@@ -822,6 +975,101 @@
     });
 
     // ==========================================
+    // [탭 2-1] 반신 스탠딩 - 크롭 위치/배율/회전 백업 & 불러오기
+    // (표정을 나중에 추가로 그려서 넣을 때, 이전과 동일한 정렬로 다시 크롭할 수 있도록)
+    // ==========================================
+    document.getElementById('btnPtCropBackup').addEventListener('click', () => {
+        if (!c_pt) { alert('먼저 반신 스탠딩 파일을 첨부하고 크롭 위치를 맞춰주세요.'); return; }
+        const backup = {
+            type: 'ssorang_pt_crop_v1',
+            w: document.getElementById('portraitW').value,
+            h: document.getElementById('portraitH').value,
+            square: document.getElementById('ptSquareToggle').checked,
+            rotation: parseInt(document.getElementById('portraitRotateSlider').value) || 0,
+            canvasData: c_pt.getCanvasData()
+        };
+        const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+        safeDownloadBlob(blob, '스탠딩_크롭설정.json');
+    });
+
+    async function importPtCropSettingsFile(file) {
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            if (data.type !== 'ssorang_pt_crop_v1') throw new Error('올바른 스탠딩 크롭 설정 백업 파일이 아닙니다.');
+
+            document.getElementById('portraitW').value = data.w;
+            document.getElementById('portraitH').value = data.h;
+            document.getElementById('ptSquareToggle').checked = data.square;
+            document.getElementById('portraitH').disabled = data.square;
+
+            pendingCropByType['pt'] = { mode: 'verbatim', rotation: data.rotation || 0, canvasData: data.canvasData };
+
+            if (f_pt.length > 0) {
+                loadCropper('pt'); // 새 캔버스 크기/비율로 다시 구성한 뒤 ready()에서 회전·좌표를 자동 적용
+            } else {
+                alert('크롭 설정을 불러왔습니다. 반신 스탠딩 파일을 첨부하면 자동으로 동일한 위치·배율로 맞춰집니다.');
+            }
+        } catch (err) {
+            alert('크롭 설정을 불러오는 중 오류가 발생했습니다: ' + err.message);
+        }
+    }
+
+    document.getElementById('importPtCropJson').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        await importPtCropSettingsFile(file);
+    });
+
+    // 파일을 하나도 첨부하지 않은 상태에서도 눌러서 바로 크롭 설정을 불러올 수 있는 상단 버튼
+    document.getElementById('importPtCropJsonTop')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        await importPtCropSettingsFile(file);
+    });
+
+    // ==========================================
+    // [탭 3-1] 컷인 - 크롭 위치/배율 백업 & 불러오기
+    // (컷인을 나중에 추가로 그려서 넣을 때, 이전과 동일한 정렬로 다시 크롭할 수 있도록)
+    // ==========================================
+    document.getElementById('btnCiCropBackup').addEventListener('click', () => {
+        if (!c_ci) { alert('먼저 컷인 파일을 첨부하고 크롭 위치를 맞춰주세요.'); return; }
+        const backup = {
+            type: 'ssorang_ci_crop_v1',
+            w: document.getElementById('cutinW').value,
+            h: document.getElementById('cutinH').value,
+            canvasData: c_ci.getCanvasData()
+        };
+        const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+        safeDownloadBlob(blob, '컷인_크롭설정.json');
+    });
+
+    document.getElementById('importCiCropJson').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            if (data.type !== 'ssorang_ci_crop_v1') throw new Error('올바른 컷인 크롭 설정 백업 파일이 아닙니다.');
+
+            document.getElementById('cutinW').value = data.w;
+            document.getElementById('cutinH').value = data.h;
+
+            pendingCropByType['ci'] = { mode: 'verbatim', rotation: 0, canvasData: data.canvasData };
+
+            if (f_ci.length > 0) {
+                loadCropper('ci'); // 새 캔버스 크기/비율로 다시 구성한 뒤 ready()에서 좌표를 자동 적용
+            } else {
+                alert('크롭 설정을 불러왔습니다. 컷인 파일을 첨부하면 자동으로 동일한 위치·배율로 맞춰집니다.');
+            }
+        } catch (err) {
+            alert('크롭 설정을 불러오는 중 오류가 발생했습니다: ' + err.message);
+        }
+    });
+
+    // ==========================================
     // [탭 3] 컷인 - 다중 파일 리스트 관리
     // ==========================================
     const renderCutinFileList = () => {
@@ -836,13 +1084,35 @@
             listEl.style.display = 'none';
             if(c_ci) { c_ci.destroy(); c_ci = null; document.getElementById('imgCutin').src = ''; }
             const btn1 = document.getElementById('btnCropCutin'); if(btn1) btn1.disabled = true;
+            const btn2 = document.getElementById('btnMergeCutinSingle'); if(btn2) btn2.disabled = true;
+            const btn3 = document.getElementById('btnCiCropBackup'); if(btn3) btn3.disabled = true;
             return;
         }
 
         listEl.style.display = 'flex';
+        const swapCiFiles = (i, j) => {
+            [f_ci[i], f_ci[j]] = [f_ci[j], f_ci[i]];
+            renderCutinFileList();
+            if (i === 0 || j === 0) { stashCropVerbatim('ci'); loadCropper('ci'); } // 기준(0번) 파일이 바뀌어도 기존 크롭 위치/배율은 유지
+        };
+
         f_ci.forEach((file, index) => {
             const item = document.createElement('div');
             item.className = 'file-item';
+
+            const moveLeftBtn = document.createElement('button');
+            moveLeftBtn.className = 'file-item-move';
+            moveLeftBtn.innerText = '◀';
+            moveLeftBtn.title = '앞으로 이동';
+            moveLeftBtn.disabled = index === 0;
+            moveLeftBtn.onclick = () => swapCiFiles(index, index - 1);
+
+            const moveRightBtn = document.createElement('button');
+            moveRightBtn.className = 'file-item-move';
+            moveRightBtn.innerText = '▶';
+            moveRightBtn.title = '뒤로 이동';
+            moveRightBtn.disabled = index === f_ci.length - 1;
+            moveRightBtn.onclick = () => swapCiFiles(index, index + 1);
             
             const name = document.createElement('span');
             name.innerText = file.name;
@@ -860,11 +1130,14 @@
                 f_ci.splice(index, 1);
                 renderCutinFileList();
                 if (index === 0 && f_ci.length > 0) {
+                    stashCropVerbatim('ci'); // 기준 이미지가 바뀌어도 기존 크롭 위치/배율은 유지
                     loadCropper('ci');
                 }
             };
 
+            item.appendChild(moveLeftBtn);
             item.appendChild(name);
+            item.appendChild(moveRightBtn);
             item.appendChild(delBtn);
             listEl.appendChild(item);
         });
@@ -893,7 +1166,7 @@
     });
 
     ['cutinW', 'cutinH'].forEach(id => document.getElementById(id).addEventListener('change', () => { 
-        if(f_ci.length) loadCropper('ci'); 
+        if(f_ci.length) { stashCropRelative('ci'); loadCropper('ci'); } 
     }));
 
 
@@ -1010,6 +1283,91 @@
     });
 
     /* ==================================================
+       7-1. 컷인 - 여러 장을 한 장의 파일로 합쳐 다운로드
+       ================================================== */
+    document.getElementById('btnMergeCutinSingle').addEventListener('click', async () => {
+        if (!c_ci || f_ci.length === 0) return;
+
+        const btn = document.getElementById('btnMergeCutinSingle');
+        const originalText = btn.innerText;
+        btn.disabled = true; btn.innerText = '한 장으로 합치는 중...';
+
+        try {
+            const wrapEl = document.getElementById('ciBoxWrap');
+            const cW = wrapEl.clientWidth;
+            const cH = wrapEl.clientHeight;
+            const canvasData = c_ci.getCanvasData();
+            const w = parseInt(document.getElementById('cutinW').value) || 1200;
+            const h = parseInt(document.getElementById('cutinH').value) || 400;
+            const isTransparent = document.getElementById('ciTransparent').checked;
+            const fillColor = isTransparent ? 'transparent' : document.getElementById('ciColorPicker').value;
+
+            const stage = document.createElement('div');
+            stage.style.cssText = `position:fixed; top:0; left:0; width:${cW}px; height:${cH}px; opacity:0.001; pointer-events:none; z-index:-9999;`;
+            document.body.appendChild(stage);
+
+            // 현재 크롭 좌표/배율을 그대로 적용해 모든 파일을 동일하게 자름
+            const croppedCanvases = [];
+            for (let file of f_ci) {
+                await new Promise((resolve) => {
+                    const img = new Image();
+                    img.style.display = 'block';
+                    img.style.maxWidth = '100%';
+                    img.onload = () => {
+                        new Cropper(img, {
+                            viewMode: 0, autoCropArea: 1, cropBoxMovable: false, cropBoxResizable: false,
+                            center: false, guides: false, highlight: false, background: false,
+                            aspectRatio: cW / cH,
+                            minContainerWidth: cW, minContainerHeight: cH,
+                            ready() {
+                                this.cropper.setCropBoxData({ left: 0, top: 0, width: cW, height: cH });
+                                this.cropper.setCanvasData(canvasData);
+                                const canvas = this.cropper.getCroppedCanvas({
+                                    width: w, height: h, fillColor: fillColor, imageSmoothingQuality: 'high'
+                                });
+                                if (canvas) croppedCanvases.push(canvas);
+                                this.cropper.destroy();
+                                stage.innerHTML = '';
+                                resolve();
+                            }
+                        });
+                    };
+                    img.onerror = resolve;
+                    img.src = URL.createObjectURL(file);
+                    stage.appendChild(img);
+                });
+            }
+            stage.remove();
+
+            if (!croppedCanvases.length) throw new Error('합칠 이미지를 찾지 못했습니다.');
+
+            // 파일이 몇 장이든 세로로 이어붙여 하나의 캔버스(=하나의 파일)로 만든다
+            const mergedW = w;
+            const mergedH = h * croppedCanvases.length;
+            const mergedCanvas = document.createElement('canvas');
+            mergedCanvas.width = mergedW;
+            mergedCanvas.height = mergedH;
+            const ctx = mergedCanvas.getContext('2d');
+            if (!isTransparent) {
+                ctx.fillStyle = fillColor;
+                ctx.fillRect(0, 0, mergedW, mergedH);
+            }
+            croppedCanvases.forEach((cv, i) => {
+                ctx.drawImage(cv, 0, i * h);
+            });
+
+            mergedCanvas.toBlob(blob => {
+                if (!blob) throw new Error('이미지 생성에 실패했습니다.');
+                safeDownloadBlob(blob, `컷인_합본_${croppedCanvases.length}장.png`);
+            }, 'image/png');
+        } catch (e) {
+            alert('한 장으로 합치는 중 오류가 발생했습니다: ' + e.message);
+        } finally {
+            btn.disabled = false; btn.innerText = originalText;
+        }
+    });
+
+    /* ==================================================
        8. 콜라주 생성 엔진 및 전용 백업 기능
        ================================================== */
     
@@ -1119,87 +1477,102 @@
         return new File([u8arr], filename, { type: mime });
     }
 
+    // 콜라주 백업(JSON) 파일을 읽어 상태를 복원하는 공용 처리 로직
+    // (파일을 하나도 첨부하지 않은 상태에서도 백업만으로 바로 불러올 수 있도록 별도 함수로 분리)
+    async function importCollageBackupFile(file) {
+        if (!file) return;
+        const text = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve(ev.target.result);
+            reader.onerror = reject;
+            reader.readAsText(file);
+        });
+
+        try {
+            const data = JSON.parse(text);
+            if(data.type !== "ssorang_collage_v1" && data.type !== "ssorang_collage_v2") {
+                throw new Error("올바른 쏘랑 커팅기 콜라주 백업 파일이 아닙니다.");
+            }
+
+            document.getElementById('colW').value = data.settings.w;
+            document.getElementById('colH').value = data.settings.h;
+            document.getElementById('colSquareToggle').checked = data.settings.square;
+            document.getElementById('colH').disabled = data.settings.square;
+            document.getElementById('colCols').value = data.settings.cols;
+            document.getElementById('colTextColor').value = data.settings.textColor;
+            if (document.getElementById('colBgColor')) {
+                document.getElementById('colBgColor').value = data.settings.bgColor || '#f1f5f9';
+            }
+            document.getElementById('colMargin').value = data.settings.margin;
+            document.getElementById('colScenarioName').value = data.settings.scenarioName;
+            document.getElementById('colScenarioSize').value = data.settings.scenarioSize;
+            document.getElementById('colCharName').value = data.settings.charName;
+            document.getElementById('colCharSize').value = data.settings.charSize;
+            
+            globalSideScale = data.settings.globalSideScale || 1.0;
+            sideOffsetX = data.settings.sideOffsetX || 0;
+            sideOffsetY = data.settings.sideOffsetY || 0;
+
+            if (data.sideImage) {
+                const restoredFile = dataURLToFile(data.sideImage, "side_image_backup.png");
+                const dt = new DataTransfer();
+                dt.items.add(restoredFile);
+                document.getElementById('colSideImg').files = dt.files;
+            } else {
+                document.getElementById('colSideImg').value = '';
+            }
+
+            // 백업에 포함된 사용자 폰트 복원
+            if (data.fontName && data.fontData) {
+                try {
+                    await loadCustomFontFromDataUrl(data.fontName, data.fontData);
+                } catch(fontErr) { console.warn('폰트 복원 실패:', fontErr); }
+            } else {
+                customFontName = null; customFontDataUrl = null;
+                document.getElementById('colFontStatus').innerText = '';
+                document.getElementById('colFontFile').value = '';
+            }
+
+            // 백업된 원본 첨부 파일들을 f_pt에 복원 (크롭본이 아닌 원본을 유지하기 위함)
+            const restoredOriginals = [];
+            data.items.forEach((itemData) => {
+                if (itemData.originalSrc && itemData.originalFileName) {
+                    restoredOriginals.push(dataURLToFile(itemData.originalSrc, itemData.originalFileName));
+                } else {
+                    restoredOriginals.push(null);
+                }
+            });
+            f_pt = restoredOriginals;
+            f_ptIds = restoredOriginals.map(() => genFilePtId()); // 복원된 파일들에도 새 고유 ID를 부여해 위치가 아닌 ID로 표정 이름이 매칭되게 한다
+            renderPortraitFileList();
+
+            const gridArea = document.getElementById('collageGrid');
+            gridArea.innerHTML = '';
+            
+            data.items.forEach((itemData, idx) => {
+                const mode = itemData.blindMode || (itemData.blinded ? 'silhouette' : 'none');
+                createCollageItem(itemData.src, itemData.name, f_ptIds[idx], mode, !!itemData.nameOff);
+            });
+
+            document.getElementById('collagePreviewArea').style.display = 'block';
+            await drawFinalCollage(false);
+            
+        } catch (err) {
+            alert("백업을 불러오는 중 오류가 발생했습니다: " + err.message);
+        }
+    }
+
     document.getElementById('importCollageJson').addEventListener('change', async (e) => {
         const file = e.target.files[0];
-        if(!file) return;
+        e.target.value = '';
+        await importCollageBackupFile(file);
+    });
 
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-            try {
-                const data = JSON.parse(ev.target.result);
-                if(data.type !== "ssorang_collage_v1" && data.type !== "ssorang_collage_v2") {
-                    throw new Error("올바른 쏘랑 커팅기 콜라주 백업 파일이 아닙니다.");
-                }
-
-                document.getElementById('colW').value = data.settings.w;
-                document.getElementById('colH').value = data.settings.h;
-                document.getElementById('colSquareToggle').checked = data.settings.square;
-                document.getElementById('colH').disabled = data.settings.square;
-                document.getElementById('colCols').value = data.settings.cols;
-                document.getElementById('colTextColor').value = data.settings.textColor;
-                if (document.getElementById('colBgColor')) {
-                    document.getElementById('colBgColor').value = data.settings.bgColor || '#f1f5f9';
-                }
-                document.getElementById('colMargin').value = data.settings.margin;
-                document.getElementById('colScenarioName').value = data.settings.scenarioName;
-                document.getElementById('colScenarioSize').value = data.settings.scenarioSize;
-                document.getElementById('colCharName').value = data.settings.charName;
-                document.getElementById('colCharSize').value = data.settings.charSize;
-                
-                globalSideScale = data.settings.globalSideScale || 1.0;
-                sideOffsetX = data.settings.sideOffsetX || 0;
-                sideOffsetY = data.settings.sideOffsetY || 0;
-
-                if (data.sideImage) {
-                    const restoredFile = dataURLToFile(data.sideImage, "side_image_backup.png");
-                    const dt = new DataTransfer();
-                    dt.items.add(restoredFile);
-                    document.getElementById('colSideImg').files = dt.files;
-                } else {
-                    document.getElementById('colSideImg').value = '';
-                }
-
-                // 백업에 포함된 사용자 폰트 복원
-                if (data.fontName && data.fontData) {
-                    try {
-                        await loadCustomFontFromDataUrl(data.fontName, data.fontData);
-                    } catch(fontErr) { console.warn('폰트 복원 실패:', fontErr); }
-                } else {
-                    customFontName = null; customFontDataUrl = null;
-                    document.getElementById('colFontStatus').innerText = '';
-                    document.getElementById('colFontFile').value = '';
-                }
-
-                // 백업된 원본 첨부 파일들을 f_pt에 복원 (크롭본이 아닌 원본을 유지하기 위함)
-                const restoredOriginals = [];
-                data.items.forEach((itemData) => {
-                    if (itemData.originalSrc && itemData.originalFileName) {
-                        restoredOriginals.push(dataURLToFile(itemData.originalSrc, itemData.originalFileName));
-                    } else {
-                        restoredOriginals.push(null);
-                    }
-                });
-                f_pt = restoredOriginals;
-                f_ptIds = restoredOriginals.map(() => genFilePtId()); // 복원된 파일들에도 새 고유 ID를 부여해 위치가 아닌 ID로 표정 이름이 매칭되게 한다
-                renderPortraitFileList();
-
-                const gridArea = document.getElementById('collageGrid');
-                gridArea.innerHTML = '';
-                
-                data.items.forEach((itemData, idx) => {
-                    const mode = itemData.blindMode || (itemData.blinded ? 'silhouette' : 'none');
-                    createCollageItem(itemData.src, itemData.name, f_ptIds[idx], mode, !!itemData.nameOff);
-                });
-
-                document.getElementById('collagePreviewArea').style.display = 'block';
-                await drawFinalCollage(false);
-                
-            } catch (err) {
-                alert("백업을 불러오는 중 오류가 발생했습니다: " + err.message);
-            }
-        };
-        reader.readAsText(file);
-        e.target.value = ''; 
+    // 파일을 하나도 첨부하지 않은 상태에서도 눌러서 바로 백업을 불러올 수 있는 상단 버튼
+    document.getElementById('importCollageJsonTop')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        await importCollageBackupFile(file);
     });
 
     (function() {
